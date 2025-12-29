@@ -8,8 +8,8 @@ const AboutSection = () => {
       <div className="container-wide">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Image */}
-          <div className="relative">
-            <div className="relative rounded-3xl overflow-hidden shadow-elevated">
+          <div className="relative flex justify-center lg:justify-start">
+            <div className="relative rounded-3xl overflow-hidden shadow-elevated w-48 md:w-56">
               <img
                 src={adrianaPortrait}
                 alt="Adriana Gómez - Psicóloga"
@@ -17,8 +17,8 @@ const AboutSection = () => {
               />
             </div>
             {/* Decorative element */}
-            <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-accent rounded-full -z-10" />
-            <div className="absolute -top-6 -left-6 w-24 h-24 opacity-30">
+            <div className="absolute -bottom-3 -right-3 w-16 h-16 bg-accent rounded-full -z-10" />
+            <div className="absolute -top-3 -left-3 w-12 h-12 opacity-30">
               <img src={knotIcon} alt="" className="w-full h-full object-contain" />
             </div>
           </div>
