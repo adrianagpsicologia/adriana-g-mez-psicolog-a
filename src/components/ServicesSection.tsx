@@ -108,7 +108,7 @@ const ServicesSection = () => {
         {/* CTA */}
         <div className="text-center mt-12">
           <Button variant="cta" size="lg" asChild>
-            <a href="#tarifas">Reservar primera entrevista gratuita</a>
+            <a href="#tarifas">Reservar primera entrevista</a>
           </Button>
         </div>
       </div>

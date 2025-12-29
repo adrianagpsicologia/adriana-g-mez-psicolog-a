@@ -9,9 +9,7 @@ const pricingPlans = [
     price: 60,
     unit: "sesión",
     features: [
-      "Sesión de 50-60 minutos",
-      "Atención personalizada",
-      "Seguimiento entre sesiones",
+      "Sesión de 50 minutos",
     ],
     popular: false,
   },
@@ -24,10 +22,9 @@ const pricingPlans = [
     pricePerSession: 50,
     unit: "bono",
     features: [
-      "4 sesiones de 50-60 minutos",
+      "4 sesiones de 50 minutos",
       "Ahorro de 40€",
       "Sin fecha de caducidad",
-      "Transferible a otra persona",
     ],
     popular: true,
   },
@@ -38,9 +35,7 @@ const pricingPlans = [
     price: 70,
     unit: "sesión",
     features: [
-      "Sesión de 60-75 minutos",
-      "Trabajo conjunto con ambos",
-      "Herramientas de comunicación",
+      "Sesión de 50 minutos",
     ],
     popular: false,
   },
@@ -53,10 +48,9 @@ const pricingPlans = [
     pricePerSession: 60,
     unit: "bono",
     features: [
-      "4 sesiones de 60-75 minutos",
+      "4 sesiones de 50 minutos",
       "Ahorro de 40€",
       "Sin fecha de caducidad",
-      "Trabajo continuo en pareja",
     ],
     popular: false,
   },
@@ -72,7 +66,7 @@ const PricingSection = () => {
           </p>
           <h2 className="heading-section mb-4">Reserva tu cita</h2>
           <p className="body-large text-muted-foreground max-w-2xl mx-auto">
-            Primera entrevista gratuita para conocernos y ver cómo puedo ayudarte
+            Primera entrevista para conocernos y ver cómo puedo ayudarte
           </p>
         </div>
 
