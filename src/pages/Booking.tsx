@@ -152,17 +152,18 @@ const Booking = () => {
     const slots: TimeSlot[] = [];
 
     for (const avail of dayAvailability) {
-      const [startH, startM] = avail.start_time.split(":").map(Number);
-      const [endH, endM] = avail.end_time.split(":").map(Number);
+      const [startH] = avail.start_time.split(":").map(Number);
+      const [endH] = avail.end_time.split(":").map(Number);
       const duration = selectedService?.duration_minutes || 50;
 
-      let currentMinutes = startH * 60 + startM;
-      const endMinutes = endH * 60 + endM;
-
-      while (currentMinutes + duration <= endMinutes) {
-        const slotStart = `${String(Math.floor(currentMinutes / 60)).padStart(2, "0")}:${String(currentMinutes % 60).padStart(2, "0")}`;
-        const slotEndMin = currentMinutes + duration;
+      // Only allow slots at the top of each hour
+      for (let hour = startH; hour < endH; hour++) {
+        const slotStart = `${String(hour).padStart(2, "0")}:00`;
+        const slotEndMin = hour * 60 + duration;
         const slotEnd = `${String(Math.floor(slotEndMin / 60)).padStart(2, "0")}:${String(slotEndMin % 60).padStart(2, "0")}`;
+
+        // Ensure slot fits within availability window
+        if (slotEndMin > endH * 60) continue;
 
         // Check if slot is already booked
         const isBooked = existingBookings.some(
@@ -172,7 +173,6 @@ const Booking = () => {
         if (!isBooked) {
           slots.push({ start: slotStart, end: slotEnd });
         }
-        currentMinutes += duration;
       }
     }
     return slots;
