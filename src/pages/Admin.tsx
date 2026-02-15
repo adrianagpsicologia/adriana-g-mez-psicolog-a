@@ -16,7 +16,7 @@ const Admin = () => {
   const { user, loading, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [tab, setTab] = useState<"bookings" | "availability" | "patients">("bookings");
+  const [tab, setTab] = useState<"bookings" | "availability" | "patients" | "admin-booking">("bookings");
 
   // Bookings
   const [bookings, setBookings] = useState<any[]>([]);
@@ -31,6 +31,15 @@ const Admin = () => {
   const [newBlockedReason, setNewBlockedReason] = useState("");
   // Patients
   const [patients, setPatients] = useState<any[]>([]);
+  const [newPatientName, setNewPatientName] = useState("");
+  const [newPatientEmail, setNewPatientEmail] = useState("");
+  const [creatingPatient, setCreatingPatient] = useState(false);
+  // Admin booking
+  const [adminBookingPatient, setAdminBookingPatient] = useState<any>(null);
+  const [adminBookingService, setAdminBookingService] = useState("");
+  const [adminBookingDate, setAdminBookingDate] = useState("");
+  const [adminBookingTime, setAdminBookingTime] = useState("");
+  const [services, setServices] = useState<any[]>([]);
   // Modify modal
   const [modifyingBooking, setModifyingBooking] = useState<any>(null);
   const [modifyDate, setModifyDate] = useState("");
@@ -47,6 +56,7 @@ const Admin = () => {
       fetchBookings();
       fetchAvailability();
       fetchPatients();
+      fetchServices();
     }
   }, [user, isAdmin]);
 
@@ -81,6 +91,65 @@ const Admin = () => {
       .select("*, patient_bonos:patient_bonos(*, bono:bonos(name))")
       .order("created_at", { ascending: false });
     if (data) setPatients(data);
+  };
+
+  const fetchServices = async () => {
+    const { data } = await supabase.from("services").select("*").eq("is_active", true);
+    if (data) setServices(data);
+  };
+
+  const handleCreatePatient = async () => {
+    if (!newPatientName || !newPatientEmail) return;
+    setCreatingPatient(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-create-patient", {
+        body: { fullName: newPatientName, email: newPatientEmail },
+      });
+      if (error) throw error;
+      toast({ title: "Paciente creado", description: `${newPatientName} añadido correctamente.` });
+      setNewPatientName("");
+      setNewPatientEmail("");
+      fetchPatients();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setCreatingPatient(false);
+    }
+  };
+
+  const handleAdminBooking = async () => {
+    if (!adminBookingPatient || !adminBookingService || !adminBookingDate || !adminBookingTime) return;
+    setProcessing("admin-booking");
+    try {
+      const service = services.find((s: any) => s.id === adminBookingService);
+      const duration = service?.duration_minutes || 50;
+      const [h, m] = adminBookingTime.split(":").map(Number);
+      const endMin = h * 60 + m + duration;
+      const endTime = `${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(endMin % 60).padStart(2, "0")}:00`;
+
+      const { error } = await supabase.from("bookings").insert({
+        user_id: adminBookingPatient.user_id,
+        service_id: adminBookingService,
+        booking_date: adminBookingDate,
+        start_time: adminBookingTime + ":00",
+        end_time: endTime,
+        status: "pending",
+        payment_method: "stripe",
+        payment_status: "pending",
+      });
+      if (error) throw error;
+
+      toast({ title: "Cita creada", description: "Cita asignada correctamente al paciente." });
+      setAdminBookingPatient(null);
+      setAdminBookingService("");
+      setAdminBookingDate("");
+      setAdminBookingTime("");
+      fetchBookings();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setProcessing(null);
+    }
   };
 
   // Get patient email from auth (via edge function or stored) - we'll use user_id to look up
@@ -291,10 +360,11 @@ const Admin = () => {
   const otherBookings = bookings.filter((b) => b.status !== "pending");
 
   const tabs = [
-    { key: "bookings", label: "Citas", icon: Calendar },
-    { key: "availability", label: "Disponibilidad", icon: Clock },
-    { key: "patients", label: "Pacientes", icon: Users },
-  ] as const;
+    { key: "bookings" as const, label: "Citas", icon: Calendar },
+    { key: "availability" as const, label: "Disponibilidad", icon: Clock },
+    { key: "patients" as const, label: "Pacientes", icon: Users },
+    { key: "admin-booking" as const, label: "Asignar cita", icon: Plus },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -564,24 +634,134 @@ const Admin = () => {
 
         {/* Patients tab */}
         {tab === "patients" && (
-          <div className="space-y-4">
-            <h2 className="heading-card">Pacientes</h2>
-            {patients.map((p) => (
-              <div key={p.id} className="card-elevated">
-                <p className="font-medium">{p.full_name || "Sin nombre"}</p>
-                <p className="text-sm text-muted-foreground">{p.phone}</p>
-                {(p.patient_bonos as any[])?.length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    {(p.patient_bonos as any[]).map((pb: any) => (
-                      <p key={pb.id} className="text-xs text-muted-foreground">
-                        {pb.bono?.name}: {pb.sessions_remaining}/{pb.sessions_total} sesiones · {pb.payment_status}
-                      </p>
-                    ))}
-                  </div>
-                )}
+          <div className="space-y-8">
+            {/* Add new patient */}
+            <div>
+              <h2 className="heading-card mb-4">Añadir paciente</h2>
+              <div className="flex flex-wrap gap-3 items-end mb-6">
+                <div>
+                  <Label>Nombre y apellidos</Label>
+                  <Input
+                    value={newPatientName}
+                    onChange={(e) => setNewPatientName(e.target.value)}
+                    className="mt-1 w-64"
+                    placeholder="Nombre Apellido"
+                  />
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <Input
+                    type="email"
+                    value={newPatientEmail}
+                    onChange={(e) => setNewPatientEmail(e.target.value)}
+                    className="mt-1 w-64"
+                    placeholder="paciente@email.com"
+                  />
+                </div>
+                <Button onClick={handleCreatePatient} variant="cta" size="sm" disabled={creatingPatient}>
+                  <Plus size={14} /> {creatingPatient ? "Creando..." : "Añadir"}
+                </Button>
               </div>
-            ))}
-            {patients.length === 0 && <p className="text-muted-foreground text-sm">No hay pacientes registrados.</p>}
+              <p className="text-xs text-muted-foreground">
+                Puedes asignar el mismo email a diferentes pacientes si es necesario.
+              </p>
+            </div>
+
+            {/* Patient list */}
+            <div>
+              <h2 className="heading-card mb-4">Pacientes registrados</h2>
+              {patients.map((p) => (
+                <div key={p.id} className="card-elevated mb-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">{p.full_name || "Sin nombre"}</p>
+                      <p className="text-sm text-muted-foreground">{p.phone}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setAdminBookingPatient(p);
+                        setTab("admin-booking");
+                      }}
+                    >
+                      <Calendar size={14} /> Asignar cita
+                    </Button>
+                  </div>
+                  {(p.patient_bonos as any[])?.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {(p.patient_bonos as any[]).map((pb: any) => (
+                        <p key={pb.id} className="text-xs text-muted-foreground">
+                          {pb.bono?.name}: {pb.sessions_remaining}/{pb.sessions_total} sesiones · {pb.payment_status}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {patients.length === 0 && <p className="text-muted-foreground text-sm">No hay pacientes registrados.</p>}
+            </div>
+          </div>
+        )}
+
+        {/* Admin booking tab */}
+        {tab === "admin-booking" && (
+          <div className="space-y-6 max-w-lg">
+            <h2 className="heading-card">Asignar cita a paciente</h2>
+
+            <div>
+              <Label>Paciente</Label>
+              {adminBookingPatient ? (
+                <div className="flex items-center gap-3 mt-1">
+                  <span className="text-sm font-medium">{adminBookingPatient.full_name}</span>
+                  <Button variant="ghost" size="sm" onClick={() => setAdminBookingPatient(null)}>Cambiar</Button>
+                </div>
+              ) : (
+                <div className="mt-1 space-y-2 max-h-48 overflow-y-auto">
+                  {patients.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => setAdminBookingPatient(p)}
+                      className="w-full text-left p-3 rounded-lg bg-secondary hover:bg-accent text-sm transition-colors"
+                    >
+                      {p.full_name || "Sin nombre"}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <Label>Servicio</Label>
+              <select
+                value={adminBookingService}
+                onChange={(e) => setAdminBookingService(e.target.value)}
+                className="block w-full mt-1 rounded-md border border-border bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Seleccionar...</option>
+                {services.map((s: any) => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.duration_minutes} min)</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <Label>Fecha</Label>
+              <Input type="date" value={adminBookingDate} onChange={(e) => setAdminBookingDate(e.target.value)} className="mt-1" />
+            </div>
+
+            <div>
+              <Label>Hora</Label>
+              <Input type="time" value={adminBookingTime} onChange={(e) => setAdminBookingTime(e.target.value)} className="mt-1" />
+            </div>
+
+            <Button
+              variant="cta"
+              onClick={handleAdminBooking}
+              disabled={!adminBookingPatient || !adminBookingService || !adminBookingDate || !adminBookingTime || processing === "admin-booking"}
+            >
+              {processing === "admin-booking" ? "Creando..." : "Crear cita"}
+            </Button>
           </div>
         )}
       </div>
