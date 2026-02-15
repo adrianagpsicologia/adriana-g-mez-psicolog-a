@@ -68,7 +68,7 @@ const Footer = () => {
               </a>
               <div className="flex items-start gap-3 text-background/70 text-sm">
                 <MapPin size={16} className="flex-shrink-0 mt-0.5" />
-                <span>Consulta online y presencial</span>
+                <span>Consulta online</span>
               </div>
             </div>
           </div>
