@@ -89,7 +89,7 @@ const Admin = () => {
   const fetchPatients = async () => {
     const { data } = await supabase
       .from("profiles")
-      .select("*, patient_bonos:patient_bonos(*, bono:bonos(name))")
+      .select("*")
       .order("created_at", { ascending: false });
     if (data) setPatients(data);
   };
@@ -689,15 +689,6 @@ const Admin = () => {
                       <Calendar size={14} /> Asignar cita
                     </Button>
                   </div>
-                  {(p.patient_bonos as any[])?.length > 0 && (
-                    <div className="mt-2 space-y-1">
-                      {(p.patient_bonos as any[]).map((pb: any) => (
-                        <p key={pb.id} className="text-xs text-muted-foreground">
-                          {pb.bono?.name}: {pb.sessions_remaining}/{pb.sessions_total} sesiones · {pb.payment_status}
-                        </p>
-                      ))}
-                    </div>
-                  )}
                 </div>
               ))}
               {patients.length === 0 && <p className="text-muted-foreground text-sm">No hay pacientes registrados.</p>}
