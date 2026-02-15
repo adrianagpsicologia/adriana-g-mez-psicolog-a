@@ -34,7 +34,7 @@ const HeroSection = () => {
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button variant="cta" size="xl" asChild>
-              <a href="https://adrianagpsicologiagmailcom.simplybook.it/v2/" target="_blank" rel="noopener noreferrer">Reservar cita</a>
+              <a href="/reservar">Reservar cita</a>
             </Button>
             <Button variant="ctaOutline" size="xl" asChild>
               <a href="#servicios">Conocer más</a>

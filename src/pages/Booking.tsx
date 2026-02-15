@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, AlertCircle, CreditCard, Building2 } from "lucide-react";
+import { ArrowLeft, AlertCircle, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, addDays, startOfDay, isBefore } from "date-fns";
 import { es } from "date-fns/locale";
@@ -61,7 +61,7 @@ const Booking = () => {
   const [useExistingBono, setUseExistingBono] = useState<PatientBono | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<TimeSlot | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"stripe" | "transfer">("stripe");
+  const [paymentMethod] = useState<"stripe">("stripe");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -282,29 +282,6 @@ const Booking = () => {
         return;
       }
 
-      if (paymentMethod === "transfer") {
-        const { error } = await supabase.from("bookings").insert({
-          user_id: user.id,
-          service_id: selectedService.id,
-          booking_date: bookingDate,
-          start_time: selectedTime.start + ":00",
-          end_time: selectedTime.end + ":00",
-          status: "pending",
-          payment_method: "transfer",
-          payment_status: "pending",
-        });
-        if (error) throw error;
-
-        await sendBookingEmails(bookingDate, selectedTime.start + ":00", selectedTime.end + ":00");
-
-        toast({
-          title: "Solicitud enviada",
-          description: "Recibirás un email de confirmación cuando revisemos tu cita.",
-        });
-        navigate("/portal");
-        return;
-      }
-
       // Stripe payment
       const amount = selectedBono ? selectedBono.price_cents : selectedService.price_cents;
       const itemName = selectedBono ? selectedBono.name : selectedService.name;
@@ -508,32 +485,12 @@ const Booking = () => {
 
             {!useExistingBono && (
               <div className="mb-6">
-                <h3 className="text-sm font-medium mb-3">Método de pago</h3>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  <button
-                    onClick={() => setPaymentMethod("stripe")}
-                    className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
-                      paymentMethod === "stripe" ? "border-foreground" : "border-border"
-                    }`}
-                  >
-                    <CreditCard size={20} />
-                    <div className="text-left">
-                      <p className="font-medium text-sm">Tarjeta</p>
-                      <p className="text-xs text-muted-foreground">Pago seguro con Stripe</p>
-                    </div>
-                  </button>
-                  <button
-                    onClick={() => setPaymentMethod("transfer")}
-                    className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all ${
-                      paymentMethod === "transfer" ? "border-foreground" : "border-border"
-                    }`}
-                  >
-                    <Building2 size={20} />
-                    <div className="text-left">
-                      <p className="font-medium text-sm">Transferencia</p>
-                      <p className="text-xs text-muted-foreground">Confirmación manual</p>
-                    </div>
-                  </button>
+                <div className="flex items-center gap-3 p-4 rounded-xl border-2 border-foreground">
+                  <CreditCard size={20} />
+                  <div className="text-left">
+                    <p className="font-medium text-sm">Pago con tarjeta</p>
+                    <p className="text-xs text-muted-foreground">Pago seguro con Stripe</p>
+                  </div>
                 </div>
               </div>
             )}
