@@ -1,23 +1,35 @@
-import { ArrowRight, Calendar } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const blogPosts = [
   {
-    title: "Cómo identificar los pensamientos automáticos negativos",
-    excerpt: "Aprende a reconocer esos pensamientos que aparecen sin que te des cuenta y que pueden afectar tu bienestar.",
-    date: "Próximamente",
-    category: "Ansiedad",
+    title: "Celos",
+    excerpt: "Los celos principalmente los genera la inseguridad, el sentirnos menos que la otra persona. Mirar hacia dentro es clave para entenderlos.",
+    category: "Pareja",
   },
   {
-    title: "La importancia de la autocompasión en el proceso terapéutico",
-    excerpt: "Descubre cómo tratarte con amabilidad puede ser el primer paso hacia el cambio.",
-    date: "Próximamente",
+    title: "Tus pensamientos no son hechos",
+    excerpt: "Los pensamientos son una interpretación de los hechos, no el hecho como tal. Ante un mismo hecho, podemos tener diferentes pensamientos.",
+    category: "Autoconocimiento",
+  },
+  {
+    title: "El tiempo todo lo cura, ¿seguro?",
+    excerpt: "El tiempo no cura, el tiempo no nos hace entender. La introspección y el trabajo a nivel anímico, en cambio, sí lo hacen.",
+    category: "Bienestar",
+  },
+  {
+    title: "Positividad, ¿puede llegar a ser dañina?",
+    excerpt: "La positividad es buena hasta que empieza a generarnos un conflicto interno. Permitirnos estar mal es completamente válido.",
+    category: "Emociones",
+  },
+  {
+    title: "Nuestros actos y cómo nos vemos",
+    excerpt: "Si nuestra conducta está enfocada en complacer a los demás, nuestra cabeza concluirá que nuestras opiniones no son válidas.",
     category: "Autoestima",
   },
   {
-    title: "Comunicación asertiva en pareja: claves para conectar mejor",
-    excerpt: "Herramientas prácticas para mejorar la comunicación y resolver conflictos de manera constructiva.",
-    date: "Próximamente",
+    title: "Acuerdos en pareja",
+    excerpt: "No basta con establecer el respeto como obligación, sino acordar los pequeños actos que consideramos que lo implican.",
     category: "Pareja",
   },
 ];
@@ -43,16 +55,13 @@ const BlogSection = () => {
           {blogPosts.map((post, index) => (
             <article
               key={index}
-              className="card-elevated group cursor-pointer opacity-75"
+              className="card-elevated group cursor-pointer"
             >
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-xs font-medium bg-accent px-3 py-1 rounded-full">
                   {post.category}
                 </span>
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Calendar size={12} />
-                  {post.date}
-                </span>
+                
               </div>
               <h3 className="heading-card mb-3 group-hover:text-muted-foreground transition-colors">
                 {post.title}
@@ -62,11 +71,6 @@ const BlogSection = () => {
           ))}
         </div>
 
-        <div className="mt-12 text-center">
-          <p className="text-muted-foreground italic">
-            Próximamente nuevos artículos sobre psicología y bienestar emocional
-          </p>
-        </div>
       </div>
     </section>
   );
