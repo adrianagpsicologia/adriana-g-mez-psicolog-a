@@ -43,6 +43,14 @@ const BlogPost = () => {
 
           <h1 className="heading-section mt-4 mb-8">{post.title}</h1>
 
+          <div className="aspect-[3/2] overflow-hidden rounded-lg mb-8">
+            <img
+              src={post.image}
+              alt={post.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+
           <div className="space-y-6">
             {post.content.map((paragraph, index) => (
               <p key={index} className="body-base text-muted-foreground leading-relaxed">
