@@ -17,7 +17,7 @@ const BlogSection = () => {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {blogPosts.map((post, index) => (
+          {blogPosts.slice(0, 3).map((post, index) => (
             <Link to={`/blog/${post.slug}`} key={index}>
               <article className="card-elevated group cursor-pointer h-full overflow-hidden">
                 <div className="aspect-[3/2] overflow-hidden -mx-6 -mt-6 mb-5">
@@ -43,6 +43,14 @@ const BlogSection = () => {
               </article>
             </Link>
           ))}
+        </div>
+
+        <div className="flex justify-center mt-10">
+          <Link to="/blog">
+            <Button variant="outline" size="lg" className="gap-2">
+              Ver todos los posts <ArrowRight size={16} />
+            </Button>
+          </Link>
         </div>
       </div>
     </section>
