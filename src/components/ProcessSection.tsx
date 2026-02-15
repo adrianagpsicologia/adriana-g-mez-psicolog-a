@@ -4,8 +4,8 @@ const steps = [
   {
     number: "01",
     icon: MessageCircle,
-    title: "Primera entrevista",
-    description: "Acordamos la primera entrevista, donde vemos el motivo de consulta, posibles líneas de actuación y frecuencia con la que realizaremos las sesiones.",
+    title: "Primera sesión",
+    description: "Acordamos la primera sesión, donde vemos el motivo de consulta, posibles líneas de actuación y frecuencia con la que realizaremos las sesiones.",
   },
   {
     number: "02",
