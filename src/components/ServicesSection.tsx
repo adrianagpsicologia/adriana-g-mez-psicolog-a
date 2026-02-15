@@ -68,9 +68,6 @@ const ServicesSection = () => {
               </li>
             ))}
           </ul>
-          <p className="text-center text-muted-foreground mt-8 body-base">
-            En el apartado servicios te explico más en detalle qué suelo tratar más habitualmente.
-          </p>
         </div>
 
         {/* Main Services */}
@@ -108,7 +105,7 @@ const ServicesSection = () => {
         {/* CTA */}
         <div className="text-center mt-12">
           <Button variant="cta" size="lg" asChild>
-            <a href="#tarifas">Reservar primera entrevista</a>
+            <a href="#tarifas">Reservar primera sesión</a>
           </Button>
         </div>
       </div>
