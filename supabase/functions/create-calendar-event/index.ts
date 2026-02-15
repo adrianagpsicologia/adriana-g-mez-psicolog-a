@@ -106,7 +106,25 @@ serve(async (req) => {
     const startHHMM = startTime.substring(0, 5);
     const endHHMM = endTime.substring(0, 5);
 
-    const event = {
+    // First, check which conference solutions are available
+    const calInfoUrl = `https://www.googleapis.com/calendar/v3/users/me/calendarList/${encodeURIComponent(calendarId)}`;
+    const calInfoRes = await fetch(calInfoUrl, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    
+    let conferenceType: string | null = null;
+    if (calInfoRes.ok) {
+      const calInfo = await calInfoRes.json();
+      const solutions = calInfo.conferenceProperties?.allowedConferenceSolutionTypes || [];
+      console.log("Available conference types:", solutions);
+      if (solutions.includes("hangoutsMeet")) {
+        conferenceType = "hangoutsMeet";
+      } else if (solutions.includes("eventHangout")) {
+        conferenceType = "eventHangout";
+      }
+    }
+
+    const event: any = {
       summary: `${serviceName || "Sesión"} - ${patientName || "Paciente"}`,
       start: {
         dateTime: `${date}T${startHHMM}:00`,
@@ -118,7 +136,19 @@ serve(async (req) => {
       },
     };
 
-    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`;
+    // Only add conference data if supported
+    let queryParam = "";
+    if (conferenceType) {
+      event.conferenceData = {
+        createRequest: {
+          requestId: `booking-${Date.now()}`,
+          conferenceSolutionKey: { type: conferenceType },
+        },
+      };
+      queryParam = "?conferenceDataVersion=1";
+    }
+
+    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events${queryParam}`;
 
     const calRes = await fetch(url, {
       method: "POST",
@@ -137,7 +167,14 @@ serve(async (req) => {
     const created = await calRes.json();
     console.log("Event created:", created.id);
 
-    return new Response(JSON.stringify({ success: true, eventId: created.id }), {
+    // Extract Google Meet link
+    const meetLink = created.conferenceData?.entryPoints?.find(
+      (ep: any) => ep.entryPointType === "video"
+    )?.uri || null;
+
+    console.log("Meet link:", meetLink);
+
+    return new Response(JSON.stringify({ success: true, eventId: created.id, meetLink }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error: any) {

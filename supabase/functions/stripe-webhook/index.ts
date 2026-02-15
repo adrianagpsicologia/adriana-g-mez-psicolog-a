@@ -73,7 +73,7 @@ serve(async (req) => {
           booking_date: bookingDate,
           start_time: startTime,
           end_time: endTime,
-          status: "confirmed",
+          status: "pending",
           payment_method: "stripe",
           payment_status: "paid",
           stripe_session_id: session.id,
@@ -86,34 +86,54 @@ serve(async (req) => {
         booking_date: bookingDate,
         start_time: startTime,
         end_time: endTime,
-        status: "confirmed",
+        status: "pending",
         payment_method: "stripe",
         payment_status: "paid",
         stripe_session_id: session.id,
       });
     }
 
-    // Create Google Calendar event
+    // Send notification emails
     try {
       const SUPABASE_URL_ENV = Deno.env.get("SUPABASE_URL")!;
       const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY")!;
-      
-      await fetch(`${SUPABASE_URL_ENV}/functions/v1/create-calendar-event`, {
+
+      const patientName = profile?.full_name || "Paciente";
+      const serviceName = service?.name || "Sesión";
+
+      // Format date nicely
+      const dateObj = new Date(bookingDate + "T12:00:00");
+      const dateFormatted = dateObj.toLocaleDateString("es-ES", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+      const timeFormatted = `${startTime.slice(0, 5)} - ${endTime.slice(0, 5)}`;
+
+      // Email to patient
+      await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-booking-email`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-        },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
         body: JSON.stringify({
-          date: bookingDate,
-          startTime,
-          endTime,
-          patientName: profile?.full_name || "Paciente",
-          serviceName: service?.name || "Sesión",
+          type: "patient_request_sent",
+          userId,
+          patientName,
+          serviceName,
+          date: dateFormatted,
+          time: timeFormatted,
+        }),
+      });
+
+      // Email to admin
+      await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-booking-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({
+          type: "admin_new_request",
+          patientName,
+          serviceName,
+          date: dateFormatted,
+          time: timeFormatted,
         }),
       });
     } catch (e) {
-      console.error("Error creating calendar event from webhook:", e);
+      console.error("Error sending booking emails from webhook:", e);
     }
   }
 

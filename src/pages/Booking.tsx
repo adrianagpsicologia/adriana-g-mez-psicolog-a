@@ -207,27 +207,44 @@ const Booking = () => {
     return slots;
   };
 
-  const createCalendarEvent = async (bookingDate: string, startTime: string, endTime: string) => {
+  const sendBookingEmails = async (bookingDate: string, startTime: string, endTime: string) => {
     try {
-      // Get patient name for the calendar event
       const { data: profile } = await supabase
         .from("profiles")
         .select("full_name")
         .eq("user_id", user!.id)
         .single();
 
-      await supabase.functions.invoke("create-calendar-event", {
+      const patientName = profile?.full_name || user!.email || "Paciente";
+      const serviceName = selectedService?.name || "Sesión";
+      const dateFormatted = format(selectedDate!, "EEEE d 'de' MMMM 'de' yyyy", { locale: es });
+      const timeFormatted = `${startTime.slice(0, 5)} - ${endTime.slice(0, 5)}`;
+
+      // Send to patient
+      await supabase.functions.invoke("send-booking-email", {
         body: {
-          date: bookingDate,
-          startTime,
-          endTime,
-          patientName: profile?.full_name || user!.email,
-          serviceName: selectedService?.name || "Sesión",
+          type: "patient_request_sent",
+          patientEmail: user!.email,
+          patientName,
+          serviceName,
+          date: dateFormatted,
+          time: timeFormatted,
+        },
+      });
+
+      // Send to admin
+      await supabase.functions.invoke("send-booking-email", {
+        body: {
+          type: "admin_new_request",
+          patientEmail: user!.email,
+          patientName,
+          serviceName,
+          date: dateFormatted,
+          time: timeFormatted,
         },
       });
     } catch (e) {
-      console.error("Error creating calendar event:", e);
-      // Non-blocking: booking still goes through
+      console.error("Error sending booking emails:", e);
     }
   };
 
@@ -246,7 +263,7 @@ const Booking = () => {
           booking_date: bookingDate,
           start_time: selectedTime.start + ":00",
           end_time: selectedTime.end + ":00",
-          status: "confirmed",
+          status: "pending",
           payment_method: "stripe",
           payment_status: "paid",
         });
@@ -258,9 +275,9 @@ const Booking = () => {
           .update({ sessions_remaining: useExistingBono.sessions_remaining - 1 })
           .eq("id", useExistingBono.id);
 
-        await createCalendarEvent(bookingDate, selectedTime.start + ":00", selectedTime.end + ":00");
+        await sendBookingEmails(bookingDate, selectedTime.start + ":00", selectedTime.end + ":00");
 
-        toast({ title: "¡Cita reservada!", description: "Se ha descontado una sesión de tu bono." });
+        toast({ title: "Solicitud enviada", description: "Recibirás un email de confirmación cuando revisemos tu cita." });
         navigate("/portal");
         return;
       }
@@ -278,11 +295,11 @@ const Booking = () => {
         });
         if (error) throw error;
 
-        await createCalendarEvent(bookingDate, selectedTime.start + ":00", selectedTime.end + ":00");
+        await sendBookingEmails(bookingDate, selectedTime.start + ":00", selectedTime.end + ":00");
 
         toast({
-          title: "Reserva pendiente de pago",
-          description: "Realiza la transferencia y tu cita será confirmada manualmente.",
+          title: "Solicitud enviada",
+          description: "Recibirás un email de confirmación cuando revisemos tu cita.",
         });
         navigate("/portal");
         return;

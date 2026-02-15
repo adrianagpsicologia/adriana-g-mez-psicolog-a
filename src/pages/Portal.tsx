@@ -132,10 +132,10 @@ const Portal = () => {
   }
 
   const upcomingBookings = bookings.filter(
-    (b) => b.status === "confirmed" && new Date(`${b.booking_date}T${b.start_time}`) >= new Date()
+    (b) => (b.status === "confirmed" || b.status === "pending") && new Date(`${b.booking_date}T${b.start_time}`) >= new Date()
   );
   const pastBookings = bookings.filter(
-    (b) => b.status !== "confirmed" || new Date(`${b.booking_date}T${b.start_time}`) < new Date()
+    (b) => (b.status !== "confirmed" && b.status !== "pending") || new Date(`${b.booking_date}T${b.start_time}`) < new Date()
   );
 
   return (

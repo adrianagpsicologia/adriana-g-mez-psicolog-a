@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, LogOut, Plus, Trash2, Calendar, Users, Settings, Clock } from "lucide-react";
+import { ArrowLeft, LogOut, Plus, Trash2, Calendar, Users, Clock, Check, X, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -31,6 +31,12 @@ const Admin = () => {
   const [newBlockedReason, setNewBlockedReason] = useState("");
   // Patients
   const [patients, setPatients] = useState<any[]>([]);
+  // Modify modal
+  const [modifyingBooking, setModifyingBooking] = useState<any>(null);
+  const [modifyDate, setModifyDate] = useState("");
+  const [modifyTime, setModifyTime] = useState("");
+  // Processing state
+  const [processing, setProcessing] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) navigate("/portal");
@@ -49,7 +55,6 @@ const Admin = () => {
       .from("bookings")
       .select("*, service:services(name)")
       .order("booking_date", { ascending: true });
-    // Fetch profiles separately for names
     if (data) {
       const userIds = [...new Set(data.map((b: any) => b.user_id))];
       const { data: profiles } = await supabase
@@ -78,6 +83,154 @@ const Admin = () => {
     if (data) setPatients(data);
   };
 
+  // Get patient email from auth (via edge function or stored) - we'll use user_id to look up
+  const getPatientEmail = async (userId: string): Promise<string | null> => {
+    // We can't access auth.users from client, so we'll pass user_id to the email function
+    // and let it handle it. For now we'll store a note.
+    // Actually, the edge function needs the email. Let's query it from the booking context.
+    return null;
+  };
+
+  const handleVerify = async (booking: any) => {
+    setProcessing(booking.id);
+    try {
+      // 1. Create Google Calendar event with Meet
+      const { data: calData } = await supabase.functions.invoke("create-calendar-event", {
+        body: {
+          date: booking.booking_date,
+          startTime: booking.start_time,
+          endTime: booking.end_time,
+          patientName: booking.patient_name,
+          serviceName: booking.service?.name || "Sesión",
+        },
+      });
+
+      const meetLink = calData?.meetLink || null;
+
+      // 2. Update booking status
+      await supabase.from("bookings").update({ status: "confirmed" }).eq("id", booking.id);
+
+      // 3. Get patient email via service role function
+      const dateFormatted = format(parseISO(booking.booking_date), "EEEE d 'de' MMMM 'de' yyyy", { locale: es });
+      const timeFormatted = `${booking.start_time.slice(0, 5)} - ${booking.end_time.slice(0, 5)}`;
+
+      // Send confirmation email to patient
+      await supabase.functions.invoke("send-booking-email", {
+        body: {
+          type: "patient_confirmed",
+          userId: booking.user_id,
+          patientName: booking.patient_name,
+          serviceName: booking.service?.name || "Sesión",
+          date: dateFormatted,
+          time: timeFormatted,
+          meetLink,
+        },
+      });
+
+      toast({ title: "Cita verificada", description: meetLink ? "Evento creado en Google Calendar con Google Meet." : "Evento creado en Google Calendar." });
+      fetchBookings();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleCancel = async (booking: any) => {
+    setProcessing(booking.id);
+    try {
+      await supabase.from("bookings").update({ status: "cancelled" }).eq("id", booking.id);
+
+      const dateFormatted = format(parseISO(booking.booking_date), "EEEE d 'de' MMMM 'de' yyyy", { locale: es });
+      const timeFormatted = `${booking.start_time.slice(0, 5)} - ${booking.end_time.slice(0, 5)}`;
+
+      await supabase.functions.invoke("send-booking-email", {
+        body: {
+          type: "patient_cancelled",
+          userId: booking.user_id,
+          patientName: booking.patient_name,
+          serviceName: booking.service?.name || "Sesión",
+          date: dateFormatted,
+          time: timeFormatted,
+        },
+      });
+
+      toast({ title: "Cita cancelada", description: "Se ha notificado al paciente." });
+      fetchBookings();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const openModify = (booking: any) => {
+    setModifyingBooking(booking);
+    setModifyDate(booking.booking_date);
+    setModifyTime(booking.start_time.slice(0, 5));
+  };
+
+  const handleModify = async () => {
+    if (!modifyingBooking || !modifyDate || !modifyTime) return;
+    setProcessing(modifyingBooking.id);
+    try {
+      const duration = 50; // minutes
+      const [h, m] = modifyTime.split(":").map(Number);
+      const endMin = h * 60 + m + duration;
+      const endTime = `${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(endMin % 60).padStart(2, "0")}:00`;
+
+      // Update booking
+      await supabase.from("bookings").update({
+        booking_date: modifyDate,
+        start_time: modifyTime + ":00",
+        end_time: endTime,
+        status: "confirmed",
+      }).eq("id", modifyingBooking.id);
+
+      // Create new calendar event with Meet
+      const { data: calData } = await supabase.functions.invoke("create-calendar-event", {
+        body: {
+          date: modifyDate,
+          startTime: modifyTime + ":00",
+          endTime,
+          patientName: modifyingBooking.patient_name,
+          serviceName: modifyingBooking.service?.name || "Sesión",
+        },
+      });
+
+      const meetLink = calData?.meetLink || null;
+
+      const oldDateFormatted = format(parseISO(modifyingBooking.booking_date), "EEEE d 'de' MMMM", { locale: es });
+      const oldTimeFormatted = modifyingBooking.start_time.slice(0, 5);
+      const newDateFormatted = format(parseISO(modifyDate), "EEEE d 'de' MMMM 'de' yyyy", { locale: es });
+      const newTimeFormatted = `${modifyTime} - ${endTime.slice(0, 5)}`;
+
+      await supabase.functions.invoke("send-booking-email", {
+        body: {
+          type: "patient_modified",
+          userId: modifyingBooking.user_id,
+          patientName: modifyingBooking.patient_name,
+          serviceName: modifyingBooking.service?.name || "Sesión",
+          date: oldDateFormatted + " · " + oldTimeFormatted,
+          time: newTimeFormatted,
+          newDate: newDateFormatted,
+          newTime: newTimeFormatted,
+          meetLink,
+          modifiedInfo: `Anteriormente: ${oldDateFormatted} a las ${oldTimeFormatted}`,
+        },
+      });
+
+      toast({ title: "Cita modificada", description: "Se ha notificado al paciente con los nuevos detalles." });
+      setModifyingBooking(null);
+      fetchBookings();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  // --- Availability & blocked dates ---
   const addAvailability = async () => {
     const { error } = await supabase.from("availability").insert({
       day_of_week: newDay,
@@ -115,18 +268,27 @@ const Admin = () => {
     fetchAvailability();
   };
 
-  const updateBookingStatus = async (id: string, status: "pending" | "confirmed" | "completed" | "cancelled" | "no_show") => {
-    await supabase.from("bookings").update({ status }).eq("id", id);
-    fetchBookings();
-  };
-
   const confirmPayment = async (id: string) => {
-    await supabase.from("bookings").update({ payment_status: "paid", status: "confirmed" }).eq("id", id);
+    await supabase.from("bookings").update({ payment_status: "paid" }).eq("id", id);
     toast({ title: "Pago confirmado" });
     fetchBookings();
   };
 
   if (loading || !user || !isAdmin) return null;
+
+  const statusLabel = (status: string) => {
+    const map: Record<string, { label: string; color: string }> = {
+      confirmed: { label: "Confirmada", color: "bg-green-100 text-green-800" },
+      pending: { label: "Pendiente", color: "bg-yellow-100 text-yellow-800" },
+      completed: { label: "Realizada", color: "bg-blue-100 text-blue-800" },
+      cancelled: { label: "Cancelada", color: "bg-red-100 text-red-800" },
+      no_show: { label: "No asistió", color: "bg-gray-100 text-gray-800" },
+    };
+    return map[status] || { label: status, color: "bg-gray-100 text-gray-800" };
+  };
+
+  const pendingBookings = bookings.filter((b) => b.status === "pending");
+  const otherBookings = bookings.filter((b) => b.status !== "pending");
 
   const tabs = [
     { key: "bookings", label: "Citas", icon: Calendar },
@@ -172,56 +334,151 @@ const Admin = () => {
       <div className="container-wide py-8">
         {/* Bookings tab */}
         {tab === "bookings" && (
-          <div className="space-y-4">
-            <h2 className="heading-card">Todas las citas</h2>
-            {bookings.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No hay citas.</p>
-            ) : (
-              <div className="space-y-3">
-                {bookings.map((b) => (
-                  <div key={b.id} className="card-elevated flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <p className="font-medium">{b.patient_name || "Sin nombre"}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {b.service?.name} · {format(parseISO(b.booking_date), "d MMM yyyy", { locale: es })} · {b.start_time?.slice(0, 5)}
-                      </p>
-                      <div className="flex gap-2 mt-1">
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${
-                          b.status === "confirmed" ? "bg-green-100 text-green-800" :
-                          b.status === "pending" ? "bg-yellow-100 text-yellow-800" :
-                          b.status === "completed" ? "bg-blue-100 text-blue-800" :
-                          "bg-gray-100 text-gray-800"
-                        }`}>
-                          {b.status}
-                        </span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${
-                          b.payment_status === "paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
-                        }`}>
-                          {b.payment_method === "transfer" ? "Transferencia" : "Stripe"} · {b.payment_status}
-                        </span>
+          <div className="space-y-8">
+            {/* Pending requests - highlighted */}
+            {pendingBookings.length > 0 && (
+              <div>
+                <h2 className="heading-card mb-4 flex items-center gap-2">
+                  <span className="inline-block w-3 h-3 rounded-full bg-yellow-400" />
+                  Solicitudes pendientes ({pendingBookings.length})
+                </h2>
+                <div className="space-y-3">
+                  {pendingBookings.map((b) => (
+                    <div key={b.id} className="card-elevated border-2 border-yellow-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <p className="font-medium">{b.patient_name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {b.service?.name} · {format(parseISO(b.booking_date), "EEEE d MMM yyyy", { locale: es })} · {b.start_time?.slice(0, 5)}
+                        </p>
+                        <div className="flex gap-2 mt-1">
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${statusLabel(b.status).color}`}>
+                            {statusLabel(b.status).label}
+                          </span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            b.payment_status === "paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                          }`}>
+                            {b.payment_method === "transfer" ? "Transferencia" : "Stripe"} · {b.payment_status === "paid" ? "Pagado" : "Pendiente"}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                      {b.payment_status === "pending" && b.payment_method === "transfer" && (
-                        <Button size="sm" variant="cta" onClick={() => confirmPayment(b.id)}>
-                          Confirmar pago
+                      <div className="flex gap-2 flex-wrap">
+                        {b.payment_status === "pending" && b.payment_method === "transfer" && (
+                          <Button size="sm" variant="outline" onClick={() => confirmPayment(b.id)}>
+                            💰 Confirmar pago
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="cta"
+                          onClick={() => handleVerify(b)}
+                          disabled={processing === b.id}
+                        >
+                          <Check size={14} />
+                          {processing === b.id ? "Procesando..." : "Verificar"}
                         </Button>
-                      )}
-                      {b.status === "confirmed" && (
-                        <Button size="sm" variant="outline" onClick={() => updateBookingStatus(b.id, "completed")}>
-                          Marcar realizada
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => openModify(b)}
+                          disabled={processing === b.id}
+                        >
+                          <Pencil size={14} />
+                          Modificar
                         </Button>
-                      )}
-                      {b.status === "confirmed" && (
-                        <Button size="sm" variant="outline" onClick={() => updateBookingStatus(b.id, "cancelled")}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleCancel(b)}
+                          disabled={processing === b.id}
+                        >
+                          <X size={14} />
                           Cancelar
                         </Button>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
+
+            {/* All bookings */}
+            <div>
+              <h2 className="heading-card mb-4">Todas las citas</h2>
+              {otherBookings.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No hay citas.</p>
+              ) : (
+                <div className="space-y-3">
+                  {otherBookings.map((b) => (
+                    <div key={b.id} className="card-elevated flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <p className="font-medium">{b.patient_name || "Sin nombre"}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {b.service?.name} · {format(parseISO(b.booking_date), "d MMM yyyy", { locale: es })} · {b.start_time?.slice(0, 5)}
+                        </p>
+                        <div className="flex gap-2 mt-1">
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${statusLabel(b.status).color}`}>
+                            {statusLabel(b.status).label}
+                          </span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            b.payment_status === "paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                          }`}>
+                            {b.payment_method === "transfer" ? "Transferencia" : "Stripe"} · {b.payment_status === "paid" ? "Pagado" : "Pendiente"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        {b.status === "confirmed" && (
+                          <>
+                            <Button size="sm" variant="outline" onClick={() => openModify(b)}>
+                              <Pencil size={14} /> Modificar
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => handleCancel(b)}>
+                              <X size={14} /> Cancelar
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={async () => {
+                              await supabase.from("bookings").update({ status: "completed" }).eq("id", b.id);
+                              fetchBookings();
+                            }}>
+                              Marcar realizada
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Modify modal */}
+        {modifyingBooking && (
+          <div className="fixed inset-0 bg-foreground/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-background rounded-2xl p-6 w-full max-w-md shadow-xl">
+              <h3 className="heading-card mb-4">Modificar cita</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {modifyingBooking.patient_name} — {modifyingBooking.service?.name}
+              </p>
+              <div className="space-y-4">
+                <div>
+                  <Label>Nueva fecha</Label>
+                  <Input type="date" value={modifyDate} onChange={(e) => setModifyDate(e.target.value)} className="mt-1" />
+                </div>
+                <div>
+                  <Label>Nueva hora</Label>
+                  <Input type="time" value={modifyTime} onChange={(e) => setModifyTime(e.target.value)} className="mt-1" />
+                </div>
+                <div className="flex gap-3">
+                  <Button variant="cta" onClick={handleModify} disabled={processing === modifyingBooking.id}>
+                    {processing === modifyingBooking.id ? "Procesando..." : "Guardar cambios"}
+                  </Button>
+                  <Button variant="outline" onClick={() => setModifyingBooking(null)}>
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
