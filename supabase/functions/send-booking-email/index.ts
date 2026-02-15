@@ -26,10 +26,10 @@ function emailLayout(title: string, body: string): string {
           <tr>
             <td style="background-color:#302b25;padding:32px 40px;text-align:center;">
               <h1 style="font-family:'Cormorant Garamond',Georgia,serif;color:#f7f5f2;font-size:28px;font-weight:500;margin:0;letter-spacing:-0.5px;">
-                Adriana García
+                Adriana Gómez
               </h1>
               <p style="color:#d4c9b8;font-size:13px;margin:8px 0 0;letter-spacing:1px;text-transform:uppercase;">
-                Psicóloga
+                Psicología
               </p>
             </td>
           </tr>
@@ -46,7 +46,7 @@ function emailLayout(title: string, body: string): string {
           <tr>
             <td style="padding:24px 40px;background-color:#f3efe9;text-align:center;border-top:1px solid #e8e2d9;">
               <p style="font-size:12px;color:#7a7268;margin:0;">
-                Este email ha sido enviado automáticamente desde la plataforma de Adriana García Psicóloga.
+                Este email ha sido enviado automáticamente desde la plataforma de Adriana Gómez Psicología.
               </p>
             </td>
           </tr>
@@ -256,7 +256,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Adriana García Psicóloga <onboarding@resend.dev>",
+        from: "Adriana Gómez Psicología <onboarding@resend.dev>",
         to: [to],
         subject,
         html,
