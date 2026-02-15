@@ -7,6 +7,7 @@ import { ArrowLeft, AlertCircle, CreditCard, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, addDays, startOfDay, isBefore } from "date-fns";
 import { es } from "date-fns/locale";
+import BookingCalendar from "@/components/BookingCalendar";
 
 interface Service {
   id: string;
@@ -408,27 +409,18 @@ const Booking = () => {
             </h2>
             <p className="text-muted-foreground text-sm mb-6">Elige fecha y hora para tu primera sesión</p>
 
-            {/* Date picker */}
+            {/* Date picker - Calendar grid */}
             <div className="mb-6">
               <h3 className="text-sm font-medium mb-3">Fecha</h3>
-              <div className="flex flex-wrap gap-2">
-                {availableDates.slice(0, 21).map((date) => (
-                  <button
-                    key={date.toISOString()}
-                    onClick={() => { setSelectedDate(date); setSelectedTime(null); fetchCalendarBusy(date); }}
-                    className={`px-3 py-2 rounded-lg text-sm transition-all ${
-                      selectedDate?.toISOString() === date.toISOString()
-                        ? "bg-foreground text-background"
-                        : "bg-secondary hover:bg-accent"
-                    }`}
-                  >
-                    <span className="block text-xs opacity-70">
-                      {format(date, "EEE", { locale: es })}
-                    </span>
-                    {format(date, "d MMM", { locale: es })}
-                  </button>
-                ))}
-              </div>
+              <BookingCalendar
+                availableDates={availableDates}
+                selectedDate={selectedDate}
+                onSelectDate={(date) => {
+                  setSelectedDate(date);
+                  setSelectedTime(null);
+                  fetchCalendarBusy(date);
+                }}
+              />
             </div>
 
             {/* Time slots */}

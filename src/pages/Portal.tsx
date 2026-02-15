@@ -72,11 +72,20 @@ const Portal = () => {
     return isAfter(subHours(dateTime, 24), new Date());
   };
 
-  const handleCancel = async (bookingId: string) => {
+  const handleCancel = async (booking: Booking) => {
+    if (!canCancel(booking.booking_date, booking.start_time)) {
+      toast({
+        title: "No es posible cancelar",
+        description: "No se pueden cancelar citas con menos de 24 horas de antelación. La sesión se marcará como realizada.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const { error } = await supabase
       .from("bookings")
       .update({ status: "cancelled" })
-      .eq("id", bookingId);
+      .eq("id", booking.id);
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -84,6 +93,19 @@ const Portal = () => {
       toast({ title: "Cita cancelada", description: "Tu cita ha sido cancelada correctamente." });
       fetchData();
     }
+  };
+
+  const handleModify = (booking: Booking) => {
+    if (!canCancel(booking.booking_date, booking.start_time)) {
+      toast({
+        title: "No es posible modificar",
+        description: "No se pueden modificar citas con menos de 24 horas de antelación.",
+        variant: "destructive",
+      });
+      return;
+    }
+    // Navigate to booking page with modification context
+    navigate(`/reservar?modificar=${booking.id}`);
   };
 
   const statusLabel = (status: string) => {
@@ -208,18 +230,46 @@ const Portal = () => {
                       {format(parseISO(booking.booking_date), "EEEE d 'de' MMMM", { locale: es })} · {booking.start_time.slice(0, 5)} - {booking.end_time.slice(0, 5)}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
+                   <div className="flex items-center gap-3">
                     <span className={`text-xs px-2 py-1 rounded-full ${statusLabel(booking.status).color}`}>
                       {statusLabel(booking.status).label}
                     </span>
-                    {canCancel(booking.booking_date, booking.start_time) && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleCancel(booking.id)}
-                      >
-                        Cancelar
-                      </Button>
+                    {canCancel(booking.booking_date, booking.start_time) ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleModify(booking)}
+                        >
+                          Modificar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCancel(booking)}
+                        >
+                          Cancelar
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleModify(booking)}
+                          className="opacity-50"
+                        >
+                          Modificar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCancel(booking)}
+                          className="opacity-50"
+                        >
+                          Cancelar
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>
