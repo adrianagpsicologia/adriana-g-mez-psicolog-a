@@ -51,11 +51,11 @@ const Footer = () => {
             <h4 className="font-heading text-lg mb-4">Contacto</h4>
             <div className="space-y-3">
               <a
-                href="mailto:adrianagpsicologia@gmail.com"
+                href="mailto:adriana@adrianagomezpsicologia.com"
                 className="flex items-center gap-3 text-background/70 hover:text-background transition-colors text-sm"
               >
                 <Mail size={16} />
-                adrianagpsicologia@gmail.com
+                adriana@adrianagomezpsicologia.com
               </a>
               <a
                 href="https://wa.me/34722491151"

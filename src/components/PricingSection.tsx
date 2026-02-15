@@ -136,10 +136,10 @@ const PricingSection = () => {
           </p>
           <div className="flex flex-wrap justify-center gap-4 mt-4">
             <a
-              href="mailto:adrianagpsicologia@gmail.com"
+              href="mailto:adriana@adrianagomezpsicologia.com"
               className="inline-flex items-center gap-2 px-4 py-2 bg-secondary rounded-full text-sm hover:bg-accent transition-colors"
             >
-              adrianagpsicologia@gmail.com
+              adriana@adrianagomezpsicologia.com
             </a>
             <a
               href="https://wa.me/34722491151"
