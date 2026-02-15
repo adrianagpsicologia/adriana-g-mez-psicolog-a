@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const ADMIN_EMAIL = "adrianagpsicologia@gmail.com";
+const ADMIN_EMAIL = "adriana@adrianagomezpsicologia.com";
 const SITE_URL = "https://id-preview--f0cfe220-ceae-47fc-bfbc-dd8928153d84.lovable.app";
 
 function emailLayout(title: string, body: string): string {
