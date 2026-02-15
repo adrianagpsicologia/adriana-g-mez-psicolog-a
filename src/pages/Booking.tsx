@@ -206,6 +206,30 @@ const Booking = () => {
     return slots;
   };
 
+  const createCalendarEvent = async (bookingDate: string, startTime: string, endTime: string) => {
+    try {
+      // Get patient name for the calendar event
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", user!.id)
+        .single();
+
+      await supabase.functions.invoke("create-calendar-event", {
+        body: {
+          date: bookingDate,
+          startTime,
+          endTime,
+          patientName: profile?.full_name || user!.email,
+          serviceName: selectedService?.name || "Sesión",
+        },
+      });
+    } catch (e) {
+      console.error("Error creating calendar event:", e);
+      // Non-blocking: booking still goes through
+    }
+  };
+
   const handleConfirm = async () => {
     if (!selectedService || !selectedDate || !selectedTime || !user) return;
     setSubmitting(true);
@@ -214,7 +238,6 @@ const Booking = () => {
       const bookingDate = format(selectedDate, "yyyy-MM-dd");
 
       if (useExistingBono) {
-        // Use existing bono - create booking directly
         const { error } = await supabase.from("bookings").insert({
           user_id: user.id,
           service_id: selectedService.id,
@@ -229,11 +252,12 @@ const Booking = () => {
 
         if (error) throw error;
 
-        // Decrement bono sessions
         await supabase
           .from("patient_bonos")
           .update({ sessions_remaining: useExistingBono.sessions_remaining - 1 })
           .eq("id", useExistingBono.id);
+
+        await createCalendarEvent(bookingDate, selectedTime.start + ":00", selectedTime.end + ":00");
 
         toast({ title: "¡Cita reservada!", description: "Se ha descontado una sesión de tu bono." });
         navigate("/portal");
@@ -241,7 +265,6 @@ const Booking = () => {
       }
 
       if (paymentMethod === "transfer") {
-        // Bank transfer - create booking as pending
         const { error } = await supabase.from("bookings").insert({
           user_id: user.id,
           service_id: selectedService.id,
@@ -253,6 +276,8 @@ const Booking = () => {
           payment_status: "pending",
         });
         if (error) throw error;
+
+        await createCalendarEvent(bookingDate, selectedTime.start + ":00", selectedTime.end + ":00");
 
         toast({
           title: "Reserva pendiente de pago",
