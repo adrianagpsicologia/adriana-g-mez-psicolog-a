@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import adrianaPortrait from "@/assets/adriana-portrait.jpg";
 import knotIcon from "@/assets/knot-icon.png";
+import knotScribble from "@/assets/knot-scribble.png";
 
 const AboutSection = () => {
   return (
@@ -61,8 +62,8 @@ const AboutSection = () => {
             <h3 className="heading-section mb-8">Mi enfoque en terapia</h3>
             <div className="grid md:grid-cols-3 gap-8">
               <div className="card-elevated text-center">
-                <div className="w-20 h-20 mx-auto mb-4 opacity-70 p-2">
-                  <img src={knotIcon} alt="" className="w-full h-full object-contain" />
+                <div className="w-20 h-20 mx-auto mb-4 p-1">
+                  <img src={knotScribble} alt="" className="w-full h-full object-contain" />
                 </div>
                 <h4 className="font-heading text-xl mb-2">Desenredar ideas</h4>
                 <p className="text-sm text-muted-foreground">
@@ -70,8 +71,8 @@ const AboutSection = () => {
                 </p>
               </div>
               <div className="card-elevated text-center">
-                <div className="w-20 h-20 mx-auto mb-4 opacity-70 p-2">
-                  <img src={knotIcon} alt="" className="w-full h-full object-contain" />
+                <div className="w-20 h-20 mx-auto mb-4 p-1">
+                  <img src={knotScribble} alt="" className="w-full h-full object-contain" />
                 </div>
                 <h4 className="font-heading text-xl mb-2">Comunicación directa</h4>
                 <p className="text-sm text-muted-foreground">
@@ -79,8 +80,8 @@ const AboutSection = () => {
                 </p>
               </div>
               <div className="card-elevated text-center">
-                <div className="w-20 h-20 mx-auto mb-4 opacity-70 p-2">
-                  <img src={knotIcon} alt="" className="w-full h-full object-contain" />
+                <div className="w-20 h-20 mx-auto mb-4 p-1">
+                  <img src={knotScribble} alt="" className="w-full h-full object-contain" />
                 </div>
                 <h4 className="font-heading text-xl mb-2">Enfoque personalizado</h4>
                 <p className="text-sm text-muted-foreground">
