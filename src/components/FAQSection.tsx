@@ -8,7 +8,7 @@ import {
 const faqs = [
   {
     question: "¿Cómo puedo reservar mi cita?",
-    answer: "Puedes hacerlo tanto desde este enlace como por correo a adrianagpsicologia@gmail.com o por WhatsApp al +34 722491151",
+    answer: "Puedes hacerlo tanto desde este enlace como por correo a adriana@adrianagomezpsicologia.com o por WhatsApp al +34 722491151",
   },
   {
     question: "¿Cuánto dura el proceso?",
