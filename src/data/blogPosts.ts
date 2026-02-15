@@ -1,8 +1,16 @@
+import blogCelos from "@/assets/blog-celos.jpg";
+import blogPensamientos from "@/assets/blog-pensamientos.jpg";
+import blogTiempo from "@/assets/blog-tiempo.jpg";
+import blogPositividad from "@/assets/blog-positividad.jpg";
+import blogActos from "@/assets/blog-actos.jpg";
+import blogAcuerdos from "@/assets/blog-acuerdos.jpg";
+
 export interface BlogPost {
   slug: string;
   title: string;
   excerpt: string;
   category: string;
+  image: string;
   content: string[];
 }
 
@@ -12,6 +20,7 @@ export const blogPosts: BlogPost[] = [
     title: "Celos",
     excerpt: "Los celos principalmente los genera la inseguridad, el sentirnos menos que la otra persona. Mirar hacia dentro es clave para entenderlos.",
     category: "Pareja",
+    image: blogCelos,
     content: [
       "Hace un tiempo hablábamos en Instagram de los celos, qué pensabais qué los provocaba y qué terminaban generando. En este post pongo en común las respuestas más repetidas:",
       "Los celos principalmente los genera la inseguridad, el sentirnos menos que la otra persona, nos da la sensación que va a encontrar algo mejor, que tenemos que estar constantemente alerta, interpretando las señales para ver si es posible que se acerque ese momento en el que pueda encontrar a esa otra persona que nos «supera».",
@@ -28,6 +37,7 @@ export const blogPosts: BlogPost[] = [
     title: "Tus pensamientos no son hechos",
     excerpt: "Los pensamientos son una interpretación de los hechos, no el hecho como tal. Ante un mismo hecho, podemos tener diferentes pensamientos.",
     category: "Autoconocimiento",
+    image: blogPensamientos,
     content: [
       "Los pensamientos son una interpretación de los hechos, no el hecho como tal.",
       "Me explico:",
@@ -44,6 +54,7 @@ export const blogPosts: BlogPost[] = [
     title: "El tiempo todo lo cura, ¿seguro?",
     excerpt: "El tiempo no cura, el tiempo no nos hace entender. La introspección y el trabajo a nivel anímico, en cambio, sí lo hacen.",
     category: "Bienestar",
+    image: blogTiempo,
     content: [
       "¿Cuántas veces has oído la ya típica frase \"El tiempo todo lo cura\"?",
       "Yo demasiadas, es por esto que, te cuento: El tiempo no cura, el tiempo no nos hace entender, no nos hace mejorar. La introspección o el trabajo a nivel anímico en cambio, sí lo hacen.",
@@ -57,6 +68,7 @@ export const blogPosts: BlogPost[] = [
     title: "Positividad, ¿puede llegar a ser dañina?",
     excerpt: "La positividad es buena hasta que empieza a generarnos un conflicto interno. Permitirnos estar mal es completamente válido.",
     category: "Emociones",
+    image: blogPositividad,
     content: [
       "Positividad, en principio todo debería estar bien, algo positivo es algo bueno, ¿pero es siempre así?",
       "La positividad es buena hasta que empieza a generarnos un conflicto interno, como podría ser:",
@@ -71,6 +83,7 @@ export const blogPosts: BlogPost[] = [
     title: "Nuestros actos y cómo nos vemos",
     excerpt: "Si nuestra conducta está enfocada en complacer a los demás, nuestra cabeza concluirá que nuestras opiniones no son válidas.",
     category: "Autoestima",
+    image: blogActos,
     content: [
       "La cabeza hace una conexión muy rápida entre nuestros actos y cómo nos vemos.",
       "Y me explico: si nuestra conducta, por ejemplo, está enfocada en complacer a los demás, en intentar agradar, la lectura que sacará nuestra cabeza será que el éxito que tenemos en nuestras relaciones (ya sea a nivel social, laboral, romántico, familiar…), es debido a esta tendencia a complacer.",
@@ -83,6 +96,7 @@ export const blogPosts: BlogPost[] = [
     title: "Acuerdos en pareja",
     excerpt: "No basta con establecer el respeto como obligación, sino acordar los pequeños actos que consideramos que lo implican.",
     category: "Pareja",
+    image: blogAcuerdos,
     content: [
       "Una relación (realmente de cualquier tipo, no sólo de pareja), es, si nos pusiéramos a analizarla muy fríamente, como un contrato, en el cual deberíamos acordar qué cosas son válidas y cuales no.",
       "Hasta aquí todo bien y parece súper sencillo, ¿verdad? Pues espera que sigo, porque seguro que te habrás visto envueltx en algunas de estas dificultades.",

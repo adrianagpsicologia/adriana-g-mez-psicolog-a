@@ -19,7 +19,15 @@ const BlogSection = () => {
         <div className="grid md:grid-cols-3 gap-6">
           {blogPosts.map((post, index) => (
             <Link to={`/blog/${post.slug}`} key={index}>
-              <article className="card-elevated group cursor-pointer h-full">
+              <article className="card-elevated group cursor-pointer h-full overflow-hidden">
+                <div className="aspect-[3/2] overflow-hidden -mx-6 -mt-6 mb-5">
+                  <img
+                    src={post.image}
+                    alt={post.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                  />
+                </div>
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-xs font-medium bg-accent px-3 py-1 rounded-full">
                     {post.category}
