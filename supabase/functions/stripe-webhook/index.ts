@@ -35,8 +35,20 @@ serve(async (req) => {
       return new Response("Missing metadata", { status: 400 });
     }
 
+    // Get patient name and service name for calendar event
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("user_id", userId)
+      .single();
+
+    const { data: service } = await supabase
+      .from("services")
+      .select("name")
+      .eq("id", serviceId)
+      .single();
+
     if (bonoId) {
-      // Bono purchase: create patient_bono and first booking
       const { data: bonoData } = await supabase
         .from("bonos")
         .select("sessions_total")
@@ -54,7 +66,6 @@ serve(async (req) => {
           stripe_session_id: session.id,
         }).select().single();
 
-        // Create first booking from bono
         await supabase.from("bookings").insert({
           user_id: userId,
           service_id: serviceId,
@@ -69,7 +80,6 @@ serve(async (req) => {
         });
       }
     } else {
-      // Single session booking
       await supabase.from("bookings").insert({
         user_id: userId,
         service_id: serviceId,
@@ -81,6 +91,29 @@ serve(async (req) => {
         payment_status: "paid",
         stripe_session_id: session.id,
       });
+    }
+
+    // Create Google Calendar event
+    try {
+      const SUPABASE_URL_ENV = Deno.env.get("SUPABASE_URL")!;
+      const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY")!;
+      
+      await fetch(`${SUPABASE_URL_ENV}/functions/v1/create-calendar-event`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          date: bookingDate,
+          startTime,
+          endTime,
+          patientName: profile?.full_name || "Paciente",
+          serviceName: service?.name || "Sesión",
+        }),
+      });
+    } catch (e) {
+      console.error("Error creating calendar event from webhook:", e);
     }
   }
 
