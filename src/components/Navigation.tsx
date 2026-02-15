@@ -48,7 +48,7 @@ const Navigation = () => {
             </a>
           ))}
           <Button variant="cta" size="sm" asChild>
-            <a href="#tarifas">Reservar cita</a>
+            <a href="https://adrianagpsicologiagmailcom.simplybook.it/v2/" target="_blank" rel="noopener noreferrer">Reservar cita</a>
           </Button>
         </div>
 
@@ -77,7 +77,7 @@ const Navigation = () => {
               </a>
             ))}
             <Button variant="cta" className="mt-4" asChild>
-              <a href="#tarifas" onClick={() => setIsOpen(false)}>
+              <a href="https://adrianagpsicologiagmailcom.simplybook.it/v2/" target="_blank" rel="noopener noreferrer" onClick={() => setIsOpen(false)}>
                 Reservar cita
               </a>
             </Button>
