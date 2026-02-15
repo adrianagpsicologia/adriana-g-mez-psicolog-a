@@ -103,6 +103,7 @@ serve(async (req) => {
     }
     const serviceAccount = typeof parsed === 'string' ? JSON.parse(parsed) : parsed;
     console.log("Service account email:", serviceAccount.client_email);
+    const accessToken = await getAccessToken(serviceAccount);
 
     // Query events for the given date
     const timeMin = `${date}T00:00:00Z`;
