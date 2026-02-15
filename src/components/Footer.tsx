@@ -1,4 +1,4 @@
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin, Instagram } from "lucide-react";
 import knotIcon from "@/assets/knot-icon.png";
 
 const Footer = () => {
@@ -70,6 +70,15 @@ const Footer = () => {
                 <MapPin size={16} className="flex-shrink-0 mt-0.5" />
                 <span>Consulta online</span>
               </div>
+              <a
+                href="https://www.instagram.com/adrianagpsicologia/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 text-background/70 hover:text-background transition-colors text-sm"
+              >
+                <Instagram size={16} />
+                @adrianagpsicologia
+              </a>
             </div>
           </div>
         </div>
