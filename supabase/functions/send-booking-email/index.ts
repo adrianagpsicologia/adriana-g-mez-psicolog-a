@@ -256,7 +256,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Adriana Gómez Psicología <onboarding@resend.dev>",
+        from: "Adriana Gómez Psicología <noreply@adrianagomezpsicologia.com>",
         to: [to],
         subject,
         html,
