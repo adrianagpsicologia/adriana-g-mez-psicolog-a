@@ -120,8 +120,9 @@ const PricingSection = () => {
               <Button
                 variant={plan.popular ? "cta" : "ctaOutline"}
                 className="w-full"
+                asChild
               >
-                Reservar
+                <a href="https://adrianagpsicologiagmailcom.simplybook.it/v2/" target="_blank" rel="noopener noreferrer">Reservar</a>
               </Button>
             </div>
           ))}

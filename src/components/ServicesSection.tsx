@@ -105,7 +105,7 @@ const ServicesSection = () => {
         {/* CTA */}
         <div className="text-center mt-12">
           <Button variant="cta" size="lg" asChild>
-            <a href="#tarifas">Reservar primera sesión</a>
+            <a href="https://adrianagpsicologiagmailcom.simplybook.it/v2/" target="_blank" rel="noopener noreferrer">Reservar primera sesión</a>
           </Button>
         </div>
       </div>
