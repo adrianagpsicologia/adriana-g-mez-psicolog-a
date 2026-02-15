@@ -1,5 +1,6 @@
 import { Check, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const pricingPlans = [
   {
@@ -122,7 +123,7 @@ const PricingSection = () => {
                 className="w-full"
                 asChild
               >
-                <a href="https://adrianagpsicologiagmailcom.simplybook.it/v2/" target="_blank" rel="noopener noreferrer">Reservar</a>
+                <Link to="/auth">Reservar</Link>
               </Button>
             </div>
           ))}

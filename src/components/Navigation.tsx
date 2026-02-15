@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import { Link } from "react-router-dom";
 
 const Navigation = () => {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -47,9 +50,25 @@ const Navigation = () => {
               {link.label}
             </a>
           ))}
-          <Button variant="cta" size="sm" asChild>
-            <a href="https://adrianagpsicologiagmailcom.simplybook.it/v2/" target="_blank" rel="noopener noreferrer">Reservar cita</a>
-          </Button>
+          {user ? (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/portal"><User size={16} /> Mi portal</Link>
+              </Button>
+              <Button variant="cta" size="sm" asChild>
+                <Link to="/reservar">Reservar cita</Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/auth">Iniciar sesión</Link>
+              </Button>
+              <Button variant="cta" size="sm" asChild>
+                <Link to="/auth">Reservar cita</Link>
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -76,11 +95,20 @@ const Navigation = () => {
                 {link.label}
               </a>
             ))}
-            <Button variant="cta" className="mt-4" asChild>
-              <a href="https://adrianagpsicologiagmailcom.simplybook.it/v2/" target="_blank" rel="noopener noreferrer" onClick={() => setIsOpen(false)}>
-                Reservar cita
-              </a>
-            </Button>
+            {user ? (
+              <>
+                <Button variant="ghost" className="mt-2" asChild>
+                  <Link to="/portal" onClick={() => setIsOpen(false)}>Mi portal</Link>
+                </Button>
+                <Button variant="cta" className="mt-2" asChild>
+                  <Link to="/reservar" onClick={() => setIsOpen(false)}>Reservar cita</Link>
+                </Button>
+              </>
+            ) : (
+              <Button variant="cta" className="mt-4" asChild>
+                <Link to="/auth" onClick={() => setIsOpen(false)}>Reservar cita</Link>
+              </Button>
+            )}
           </div>
         </div>
       )}
