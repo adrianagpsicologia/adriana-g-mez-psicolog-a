@@ -9,7 +9,7 @@ const AboutSection = () => {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Image */}
           <div className="relative flex justify-center lg:justify-start">
-            <div className="relative rounded-3xl overflow-hidden shadow-elevated w-56 md:w-64">
+            <div className="relative rounded-3xl overflow-hidden shadow-elevated w-64 md:w-80">
               <img
                 src={adrianaPortrait}
                 alt="Adriana Gómez - Psicóloga"
