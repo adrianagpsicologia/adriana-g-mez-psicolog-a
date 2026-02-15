@@ -97,12 +97,16 @@ const Portal = () => {
     return map[status] || { label: status, color: "bg-gray-100 text-gray-800" };
   };
 
-  if (loading || !user) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <p className="text-muted-foreground">Cargando...</p>
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   const upcomingBookings = bookings.filter(
