@@ -37,6 +37,7 @@ const Admin = () => {
   // Admin booking
   const [adminBookingPatient, setAdminBookingPatient] = useState<any>(null);
   const [adminBookingService, setAdminBookingService] = useState("");
+  const [patientSearch, setPatientSearch] = useState("");
   const [adminBookingDate, setAdminBookingDate] = useState("");
   const [adminBookingTime, setAdminBookingTime] = useState("");
   const [services, setServices] = useState<any[]>([]);
@@ -717,16 +718,29 @@ const Admin = () => {
                   <Button variant="ghost" size="sm" onClick={() => setAdminBookingPatient(null)}>Cambiar</Button>
                 </div>
               ) : (
-                <div className="mt-1 space-y-2 max-h-48 overflow-y-auto">
-                  {patients.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => setAdminBookingPatient(p)}
-                      className="w-full text-left p-3 rounded-lg bg-secondary hover:bg-accent text-sm transition-colors"
-                    >
-                      {p.full_name || "Sin nombre"}
-                    </button>
-                  ))}
+                <div className="mt-1">
+                  <Input
+                    placeholder="Buscar paciente por nombre..."
+                    value={patientSearch}
+                    onChange={(e) => setPatientSearch(e.target.value)}
+                    className="mb-2"
+                  />
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {patients
+                      .filter((p) => (p.full_name || "").toLowerCase().includes(patientSearch.toLowerCase()))
+                      .map((p) => (
+                        <button
+                          key={p.id}
+                          onClick={() => { setAdminBookingPatient(p); setPatientSearch(""); }}
+                          className="w-full text-left p-3 rounded-lg bg-secondary hover:bg-accent text-sm transition-colors"
+                        >
+                          {p.full_name || "Sin nombre"}
+                        </button>
+                      ))}
+                    {patients.filter((p) => (p.full_name || "").toLowerCase().includes(patientSearch.toLowerCase())).length === 0 && (
+                      <p className="text-sm text-muted-foreground p-2">No se encontraron pacientes.</p>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
