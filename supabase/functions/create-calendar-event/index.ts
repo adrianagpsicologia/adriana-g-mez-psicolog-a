@@ -82,7 +82,7 @@ serve(async (req) => {
   }
 
   try {
-    const { date, startTime, endTime, patientName, serviceName } = await req.json();
+    const { date, startTime, endTime, patientName, serviceName, attendeeEmail } = await req.json();
     if (!date || !startTime || !endTime) {
       return new Response(JSON.stringify({ error: "date, startTime, and endTime are required" }), {
         status: 400,
@@ -135,7 +135,15 @@ serve(async (req) => {
         dateTime: `${date}T${endHHMM}:00`,
         timeZone: "Europe/Madrid",
       },
+      guestsCanModify: false,
+      guestsCanInviteOthers: false,
+      guestsCanSeeOtherGuests: false,
     };
+
+    // Add attendee if email provided so they can access the Meet link
+    if (attendeeEmail) {
+      event.attendees = [{ email: attendeeEmail }];
+    }
 
     // Only add conference data if supported
     let queryParam = "";
