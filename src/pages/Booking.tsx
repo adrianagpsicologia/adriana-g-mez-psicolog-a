@@ -52,6 +52,8 @@ const Booking = () => {
   const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
   const [blockedDates, setBlockedDates] = useState<string[]>([]);
   const [existingBookings, setExistingBookings] = useState<{ booking_date: string; start_time: string }[]>([]);
+  const [calendarBusySlots, setCalendarBusySlots] = useState<{ start: string; end: string }[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedBono, setSelectedBono] = useState<Bono | null>(null);
@@ -145,6 +147,24 @@ const Booking = () => {
     return dates;
   };
 
+  const fetchCalendarBusy = async (date: Date) => {
+    setLoadingSlots(true);
+    setCalendarBusySlots([]);
+    try {
+      const dateStr = format(date, "yyyy-MM-dd");
+      const { data, error } = await supabase.functions.invoke("check-calendar", {
+        body: { date: dateStr },
+      });
+      if (!error && data?.busySlots) {
+        setCalendarBusySlots(data.busySlots);
+      }
+    } catch (e) {
+      console.error("Error fetching calendar:", e);
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
   const getTimeSlotsForDate = (date: Date) => {
     const dayOfWeek = date.getDay();
     const dateStr = format(date, "yyyy-MM-dd");
@@ -156,13 +176,11 @@ const Booking = () => {
       const [endH] = avail.end_time.split(":").map(Number);
       const duration = selectedService?.duration_minutes || 50;
 
-      // Only allow slots at the top of each hour
       for (let hour = startH; hour < endH; hour++) {
         const slotStart = `${String(hour).padStart(2, "0")}:00`;
         const slotEndMin = hour * 60 + duration;
         const slotEnd = `${String(Math.floor(slotEndMin / 60)).padStart(2, "0")}:${String(slotEndMin % 60).padStart(2, "0")}`;
 
-        // Ensure slot fits within availability window
         if (slotEndMin > endH * 60) continue;
 
         // Check if slot is already booked
@@ -170,7 +188,17 @@ const Booking = () => {
           (b) => b.booking_date === dateStr && b.start_time === slotStart + ":00"
         );
 
-        if (!isBooked) {
+        // Check if slot overlaps with Google Calendar busy times
+        const slotStartMin = hour * 60;
+        const isBusyInCalendar = calendarBusySlots.some((busy) => {
+          const [bStartH, bStartM] = busy.start.split(":").map(Number);
+          const [bEndH, bEndM] = busy.end.split(":").map(Number);
+          const busyStart = bStartH * 60 + bStartM;
+          const busyEnd = bEndH * 60 + bEndM;
+          return slotStartMin < busyEnd && slotEndMin > busyStart;
+        });
+
+        if (!isBooked && !isBusyInCalendar) {
           slots.push({ start: slotStart, end: slotEnd });
         }
       }
@@ -362,7 +390,7 @@ const Booking = () => {
                 {availableDates.slice(0, 21).map((date) => (
                   <button
                     key={date.toISOString()}
-                    onClick={() => { setSelectedDate(date); setSelectedTime(null); }}
+                    onClick={() => { setSelectedDate(date); setSelectedTime(null); fetchCalendarBusy(date); }}
                     className={`px-3 py-2 rounded-lg text-sm transition-all ${
                       selectedDate?.toISOString() === date.toISOString()
                         ? "bg-foreground text-background"
@@ -382,24 +410,28 @@ const Booking = () => {
             {selectedDate && (
               <div className="mb-6">
                 <h3 className="text-sm font-medium mb-3">Hora</h3>
-                <div className="flex flex-wrap gap-2">
-                  {getTimeSlotsForDate(selectedDate).map((slot) => (
-                    <button
-                      key={slot.start}
-                      onClick={() => setSelectedTime(slot)}
-                      className={`px-4 py-2 rounded-lg text-sm transition-all ${
-                        selectedTime?.start === slot.start
-                          ? "bg-foreground text-background"
-                          : "bg-secondary hover:bg-accent"
-                      }`}
-                    >
-                      {slot.start}
-                    </button>
-                  ))}
-                  {getTimeSlotsForDate(selectedDate).length === 0 && (
-                    <p className="text-sm text-muted-foreground">No hay horarios disponibles para esta fecha.</p>
-                  )}
-                </div>
+                {loadingSlots ? (
+                  <p className="text-sm text-muted-foreground">Comprobando disponibilidad...</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {getTimeSlotsForDate(selectedDate).map((slot) => (
+                      <button
+                        key={slot.start}
+                        onClick={() => setSelectedTime(slot)}
+                        className={`px-4 py-2 rounded-lg text-sm transition-all ${
+                          selectedTime?.start === slot.start
+                            ? "bg-foreground text-background"
+                            : "bg-secondary hover:bg-accent"
+                        }`}
+                      >
+                        {slot.start}
+                      </button>
+                    ))}
+                    {getTimeSlotsForDate(selectedDate).length === 0 && (
+                      <p className="text-sm text-muted-foreground">No hay horarios disponibles para esta fecha.</p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
