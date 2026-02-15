@@ -9,11 +9,11 @@ const AboutSection = () => {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Image */}
           <div className="relative flex justify-center lg:justify-start">
-            <div className="relative rounded-3xl overflow-hidden shadow-elevated w-48 md:w-56">
+            <div className="relative rounded-3xl overflow-hidden shadow-elevated w-56 md:w-64">
               <img
                 src={adrianaPortrait}
                 alt="Adriana Gómez - Psicóloga"
-                className="w-full aspect-[4/5] object-cover"
+                className="w-full aspect-[3/4] object-cover object-[50%_25%]"
               />
             </div>
             {/* Decorative element */}
