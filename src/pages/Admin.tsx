@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, LogOut, Plus, Trash2, Calendar, Users, Clock, Check, X, Pencil, History } from "lucide-react";
+import { ArrowLeft, LogOut, Plus, Trash2, Calendar, Users, Clock, Check, X, Pencil, History, ChevronDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -438,34 +439,13 @@ const Admin = () => {
         {/* Bookings tab */}
         {tab === "bookings" && (
           <div className="space-y-8">
-            {/* Toggle history */}
-            <div className="flex items-center justify-between">
-              <h2 className="heading-card flex items-center gap-2">
-                {showHistory ? (
-                  <>
-                    <History size={18} />
-                    Histórico de citas
-                  </>
-                ) : (
-                  <>
-                    <span className="inline-block w-3 h-3 rounded-full bg-yellow-400" />
-                    Solicitudes pendientes ({pendingBookings.length})
-                  </>
-                )}
+            {/* Pending requests */}
+            <div>
+              <h2 className="heading-card mb-4 flex items-center gap-2">
+                <span className="inline-block w-3 h-3 rounded-full bg-yellow-400" />
+                Solicitudes pendientes ({pendingBookings.length})
               </h2>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowHistory(!showHistory)}
-              >
-                <History size={14} />
-                {showHistory ? "Ver pendientes" : "Ver histórico"}
-              </Button>
-            </div>
-
-            {!showHistory ? (
-              /* Pending bookings only */
-              pendingBookings.length === 0 ? (
+              {pendingBookings.length === 0 ? (
                 <p className="text-muted-foreground text-sm">No hay solicitudes pendientes.</p>
               ) : (
                 <div className="space-y-3">
@@ -493,85 +473,90 @@ const Admin = () => {
                             💰 Confirmar pago
                           </Button>
                         )}
-                        <Button
-                          size="sm"
-                          variant="cta"
-                          onClick={() => handleVerify(b)}
-                          disabled={processing === b.id}
-                        >
+                        <Button size="sm" variant="cta" onClick={() => handleVerify(b)} disabled={processing === b.id}>
                           <Check size={14} />
                           {processing === b.id ? "Procesando..." : "Verificar"}
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openModify(b)}
-                          disabled={processing === b.id}
-                        >
-                          <Pencil size={14} />
-                          Modificar
+                        <Button size="sm" variant="outline" onClick={() => openModify(b)} disabled={processing === b.id}>
+                          <Pencil size={14} /> Modificar
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleCancel(b)}
-                          disabled={processing === b.id}
-                        >
-                          <X size={14} />
-                          Cancelar
+                        <Button size="sm" variant="outline" onClick={() => handleCancel(b)} disabled={processing === b.id}>
+                          <X size={14} /> Cancelar
                         </Button>
                       </div>
                     </div>
                   ))}
                 </div>
-              )
-            ) : (
-              /* Historical bookings */
-              otherBookings.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No hay citas en el histórico.</p>
-              ) : (
-                <div className="space-y-3">
-                  {otherBookings.map((b) => (
-                    <div key={b.id} className="card-elevated flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div>
-                        <p className="font-medium">{b.patient_name || "Sin nombre"}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {b.service?.name} · {format(parseISO(b.booking_date), "d MMM yyyy", { locale: es })} · {b.start_time?.slice(0, 5)}
-                        </p>
-                        <div className="flex gap-2 mt-1">
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${statusLabel(b.status).color}`}>
-                            {statusLabel(b.status).label}
-                          </span>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
-                            b.payment_status === "paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
-                          }`}>
-                            {b.payment_method === "transfer" ? "Transferencia" : "Stripe"} · {b.payment_status === "paid" ? "Pagado" : "Pendiente"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex gap-2 flex-wrap">
-                        {b.status === "confirmed" && (
-                          <>
-                            <Button size="sm" variant="outline" onClick={() => openModify(b)}>
-                              <Pencil size={14} /> Modificar
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => handleCancel(b)}>
-                              <X size={14} /> Cancelar
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={async () => {
-                              await supabase.from("bookings").update({ status: "completed" }).eq("id", b.id);
-                              fetchBookings();
-                            }}>
-                              Marcar realizada
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )
-            )}
+              )}
+            </div>
+
+            {/* Collapsible history */}
+            <Collapsible open={showHistory} onOpenChange={setShowHistory}>
+              <CollapsibleTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  <span className="flex items-center gap-2">
+                    <History size={16} />
+                    Histórico de movimientos ({otherBookings.length})
+                  </span>
+                  <ChevronDown size={16} className={`transition-transform duration-200 ${showHistory ? "rotate-180" : ""}`} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-4">
+                {otherBookings.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">No hay citas en el histórico.</p>
+                ) : (
+                  <div className="rounded-lg border border-border overflow-hidden bg-card">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border bg-muted/50">
+                          <th className="text-left px-4 py-3 font-medium text-muted-foreground">Paciente</th>
+                          <th className="text-left px-4 py-3 font-medium text-muted-foreground">Tipo de sesión</th>
+                          <th className="text-left px-4 py-3 font-medium text-muted-foreground">Fecha</th>
+                          <th className="text-left px-4 py-3 font-medium text-muted-foreground">Estado</th>
+                          <th className="text-right px-4 py-3 font-medium text-muted-foreground">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {otherBookings.map((b) => (
+                          <tr key={b.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
+                            <td className="px-4 py-3 font-medium">{b.patient_name || "Sin nombre"}</td>
+                            <td className="px-4 py-3 text-muted-foreground">{b.service?.name || "—"}</td>
+                            <td className="px-4 py-3 text-muted-foreground">
+                              {format(parseISO(b.booking_date), "d MMM yyyy", { locale: es })} · {b.start_time?.slice(0, 5)}
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${statusLabel(b.status).color}`}>
+                                {statusLabel(b.status).label}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex gap-1 justify-end">
+                                {b.status === "confirmed" && (
+                                  <>
+                                    <Button size="sm" variant="ghost" onClick={() => openModify(b)}>
+                                      <Pencil size={14} />
+                                    </Button>
+                                    <Button size="sm" variant="ghost" onClick={() => handleCancel(b)}>
+                                      <X size={14} />
+                                    </Button>
+                                    <Button size="sm" variant="ghost" onClick={async () => {
+                                      await supabase.from("bookings").update({ status: "completed" }).eq("id", b.id);
+                                      fetchBookings();
+                                    }}>
+                                      <Check size={14} />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
           </div>
         )}
 
