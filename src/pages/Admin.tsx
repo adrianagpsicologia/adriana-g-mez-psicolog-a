@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, LogOut, Plus, Trash2, Calendar, Users, Clock, Check, X, Pencil } from "lucide-react";
+import { ArrowLeft, LogOut, Plus, Trash2, Calendar, Users, Clock, Check, X, Pencil, History } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -47,6 +47,7 @@ const Admin = () => {
   const [modifyTime, setModifyTime] = useState("");
   // Processing state
   const [processing, setProcessing] = useState<string | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin)) navigate("/portal");
@@ -437,13 +438,36 @@ const Admin = () => {
         {/* Bookings tab */}
         {tab === "bookings" && (
           <div className="space-y-8">
-            {/* Pending requests - highlighted */}
-            {pendingBookings.length > 0 && (
-              <div>
-                <h2 className="heading-card mb-4 flex items-center gap-2">
-                  <span className="inline-block w-3 h-3 rounded-full bg-yellow-400" />
-                  Solicitudes pendientes ({pendingBookings.length})
-                </h2>
+            {/* Toggle history */}
+            <div className="flex items-center justify-between">
+              <h2 className="heading-card flex items-center gap-2">
+                {showHistory ? (
+                  <>
+                    <History size={18} />
+                    Histórico de citas
+                  </>
+                ) : (
+                  <>
+                    <span className="inline-block w-3 h-3 rounded-full bg-yellow-400" />
+                    Solicitudes pendientes ({pendingBookings.length})
+                  </>
+                )}
+              </h2>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowHistory(!showHistory)}
+              >
+                <History size={14} />
+                {showHistory ? "Ver pendientes" : "Ver histórico"}
+              </Button>
+            </div>
+
+            {!showHistory ? (
+              /* Pending bookings only */
+              pendingBookings.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No hay solicitudes pendientes.</p>
+              ) : (
                 <div className="space-y-3">
                   {pendingBookings.map((b) => (
                     <div key={b.id} className="card-elevated border-2 border-yellow-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -500,14 +524,11 @@ const Admin = () => {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* All bookings */}
-            <div>
-              <h2 className="heading-card mb-4">Todas las citas</h2>
-              {otherBookings.length === 0 ? (
-                <p className="text-muted-foreground text-sm">No hay citas.</p>
+              )
+            ) : (
+              /* Historical bookings */
+              otherBookings.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No hay citas en el histórico.</p>
               ) : (
                 <div className="space-y-3">
                   {otherBookings.map((b) => (
@@ -549,8 +570,8 @@ const Admin = () => {
                     </div>
                   ))}
                 </div>
-              )}
-            </div>
+              )
+            )}
           </div>
         )}
 
