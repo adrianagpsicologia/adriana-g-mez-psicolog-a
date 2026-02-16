@@ -64,7 +64,7 @@ const Admin = () => {
   const fetchBookings = async () => {
     const { data } = await supabase
       .from("bookings")
-      .select("*, service:services(name)")
+      .select("*, service:services(name), google_event_id" as any)
       .order("booking_date", { ascending: true });
     if (data) {
       const userIds = [...new Set(data.map((b: any) => b.user_id))];
@@ -177,9 +177,10 @@ const Admin = () => {
       });
 
       const meetLink = calData?.meetLink || null;
+      const googleEventId = calData?.eventId || null;
 
-      // 2. Update booking status
-      await supabase.from("bookings").update({ status: "confirmed" }).eq("id", booking.id);
+      // 2. Update booking status and store google event id
+      await supabase.from("bookings").update({ status: "confirmed", google_event_id: googleEventId } as any).eq("id", booking.id);
 
       // 3. Get patient email via service role function
       const dateFormatted = format(parseISO(booking.booking_date), "EEEE d 'de' MMMM 'de' yyyy", { locale: es });
@@ -210,7 +211,18 @@ const Admin = () => {
   const handleCancel = async (booking: any) => {
     setProcessing(booking.id);
     try {
-      await supabase.from("bookings").update({ status: "cancelled" }).eq("id", booking.id);
+      // Delete Google Calendar event if exists
+      if (booking.google_event_id) {
+        try {
+          await supabase.functions.invoke("delete-calendar-event", {
+            body: { eventId: booking.google_event_id },
+          });
+        } catch (e) {
+          console.error("Could not delete calendar event:", e);
+        }
+      }
+
+      await supabase.from("bookings").update({ status: "cancelled", google_event_id: null } as any).eq("id", booking.id);
 
       const dateFormatted = format(parseISO(booking.booking_date), "EEEE d 'de' MMMM 'de' yyyy", { locale: es });
       const timeFormatted = `${booking.start_time.slice(0, 5)} - ${booking.end_time.slice(0, 5)}`;
@@ -226,7 +238,7 @@ const Admin = () => {
         },
       });
 
-      toast({ title: "Cita cancelada", description: "Se ha notificado al paciente." });
+      toast({ title: "Cita cancelada", description: "Evento eliminado del calendario y paciente notificado." });
       fetchBookings();
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
@@ -250,6 +262,17 @@ const Admin = () => {
       const endMin = h * 60 + m + duration;
       const endTime = `${String(Math.floor(endMin / 60)).padStart(2, "0")}:${String(endMin % 60).padStart(2, "0")}:00`;
 
+      // Delete old calendar event if exists
+      if (modifyingBooking.google_event_id) {
+        try {
+          await supabase.functions.invoke("delete-calendar-event", {
+            body: { eventId: modifyingBooking.google_event_id },
+          });
+        } catch (e) {
+          console.error("Could not delete old calendar event:", e);
+        }
+      }
+
       // Update booking
       await supabase.from("bookings").update({
         booking_date: modifyDate,
@@ -271,6 +294,12 @@ const Admin = () => {
       });
 
       const meetLink = calData?.meetLink || null;
+      const newGoogleEventId = calData?.eventId || null;
+
+      // Save new google_event_id
+      if (newGoogleEventId) {
+        await supabase.from("bookings").update({ google_event_id: newGoogleEventId } as any).eq("id", modifyingBooking.id);
+      }
 
       const oldDateFormatted = format(parseISO(modifyingBooking.booking_date), "EEEE d 'de' MMMM", { locale: es });
       const oldTimeFormatted = modifyingBooking.start_time.slice(0, 5);
