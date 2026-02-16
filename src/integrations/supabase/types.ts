@@ -105,6 +105,7 @@ export type Database = {
           booking_date: string
           created_at: string
           end_time: string
+          google_event_id: string | null
           id: string
           notes: string | null
           patient_bono_id: string | null
@@ -121,6 +122,7 @@ export type Database = {
           booking_date: string
           created_at?: string
           end_time: string
+          google_event_id?: string | null
           id?: string
           notes?: string | null
           patient_bono_id?: string | null
@@ -137,6 +139,7 @@ export type Database = {
           booking_date?: string
           created_at?: string
           end_time?: string
+          google_event_id?: string | null
           id?: string
           notes?: string | null
           patient_bono_id?: string | null
