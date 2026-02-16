@@ -145,6 +145,30 @@ const Admin = () => {
     }
   };
 
+  const handleAssignIndividualSession = async (patient: any, serviceId: string) => {
+    // Find matching bono for this service, or create a 1-session entry
+    const matchingBono = availableBonos.find((b: any) => b.service_id === serviceId);
+    if (!matchingBono) {
+      toast({ title: "Error", description: "No se encontró un bono para este servicio", variant: "destructive" });
+      return;
+    }
+    const serviceName = services.find((s: any) => s.id === serviceId)?.name || "Sesión";
+    const { error } = await supabase.from("patient_bonos").insert({
+      user_id: patient.user_id,
+      bono_id: matchingBono.id,
+      sessions_total: 1,
+      sessions_remaining: 1,
+      payment_method: "transfer",
+      payment_status: "paid",
+    });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Sesión asignada", description: `1 ${serviceName} asignada a ${patient.full_name}` });
+      fetchPatients();
+    }
+  };
+
   const handleCreatePatient = async () => {
     if (!newPatientName || !newPatientEmail) return;
     setCreatingPatient(true);
@@ -790,22 +814,31 @@ const Admin = () => {
                           <span className="text-xs">restantes</span>
                         </div>
                       ))}
-                      {/* Assign bono */}
-                      <div className="flex items-center gap-2 pt-1">
+                      {/* Assign sessions */}
+                      <div className="flex items-center gap-2 pt-1 flex-wrap">
                         <select
                           className="rounded-md border border-border bg-card text-sm px-2 py-1 z-10"
                           defaultValue=""
                           onChange={(e) => {
                             if (e.target.value) {
-                              handleAssignBono(p, e.target.value);
+                              const [type, id] = e.target.value.split("::");
+                              if (type === "bono") handleAssignBono(p, id);
+                              else handleAssignIndividualSession(p, id);
                               e.target.value = "";
                             }
                           }}
                         >
-                          <option value="">Asignar bono...</option>
-                          {availableBonos.map((ab: any) => (
-                            <option key={ab.id} value={ab.id}>{ab.name}</option>
-                          ))}
+                          <option value="">Asignar sesiones...</option>
+                          <optgroup label="Sesión individual">
+                            {services.map((s: any) => (
+                              <option key={`ind-${s.id}`} value={`individual::${s.id}`}>1 {s.name}</option>
+                            ))}
+                          </optgroup>
+                          <optgroup label="Bonos">
+                            {availableBonos.map((ab: any) => (
+                              <option key={ab.id} value={`bono::${ab.id}`}>{ab.name}</option>
+                            ))}
+                          </optgroup>
                         </select>
                       </div>
                     </div>
