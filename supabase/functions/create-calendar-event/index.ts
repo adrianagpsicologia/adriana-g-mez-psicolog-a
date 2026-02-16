@@ -10,7 +10,7 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
   const header = { alg: "RS256", typ: "JWT" };
   const payload: any = {
     iss: serviceAccount.client_email,
-    sub: "adriana@adrianagomezpsicologia.com",
+    sub: "adriana@adrianagpsicologia.com",
     scope: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events",
     aud: "https://oauth2.googleapis.com/token",
     exp: now + 3600,
@@ -157,7 +157,10 @@ serve(async (req) => {
       queryParam = "?conferenceDataVersion=1";
     }
 
-    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events${queryParam}`;
+    // sendUpdates=all ensures Google sends invitation emails so the event appears in the patient's calendar
+    const sendUpdates = "sendUpdates=all";
+    const separator = queryParam ? "&" : "?";
+    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events${queryParam}${separator}${sendUpdates}`;
 
     const calRes = await fetch(url, {
       method: "POST",
