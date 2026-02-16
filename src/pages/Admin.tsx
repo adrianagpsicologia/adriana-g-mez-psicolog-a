@@ -172,6 +172,7 @@ const Admin = () => {
           endTime: booking.end_time,
           patientName: booking.patient_name,
           serviceName: booking.service?.name || "Sesión",
+          userId: booking.user_id,
         },
       });
 
@@ -265,6 +266,7 @@ const Admin = () => {
           endTime,
           patientName: modifyingBooking.patient_name,
           serviceName: modifyingBooking.service?.name || "Sesión",
+          userId: modifyingBooking.user_id,
         },
       });
 

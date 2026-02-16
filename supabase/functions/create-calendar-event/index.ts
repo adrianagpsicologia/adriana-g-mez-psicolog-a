@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,7 +11,7 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
   const header = { alg: "RS256", typ: "JWT" };
   const payload: any = {
     iss: serviceAccount.client_email,
-    sub: "adriana@adrianagpsicologia.com",
+    sub: "adriana@adrianagomezpsicologia.com",
     scope: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events",
     aud: "https://oauth2.googleapis.com/token",
     exp: now + 3600,
@@ -82,12 +83,27 @@ serve(async (req) => {
   }
 
   try {
-    const { date, startTime, endTime, patientName, serviceName, attendeeEmail } = await req.json();
+    const { date, startTime, endTime, patientName, serviceName, attendeeEmail, userId } = await req.json();
     if (!date || !startTime || !endTime) {
       return new Response(JSON.stringify({ error: "date, startTime, and endTime are required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Resolve attendee email: use provided email or look up from auth via userId
+    let resolvedEmail = attendeeEmail || null;
+    if (!resolvedEmail && userId) {
+      try {
+        const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+        const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+        const { data: userData } = await supabase.auth.admin.getUserById(userId);
+        resolvedEmail = userData?.user?.email || null;
+        console.log("Resolved attendee email:", resolvedEmail);
+      } catch (e) {
+        console.error("Could not resolve attendee email:", e);
+      }
     }
 
     const serviceAccountJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON");
@@ -140,9 +156,9 @@ serve(async (req) => {
       guestsCanSeeOtherGuests: false,
     };
 
-    // Add attendee if email provided so they can access the Meet link
-    if (attendeeEmail) {
-      event.attendees = [{ email: attendeeEmail }];
+    // Add attendee if email available so the event appears in their calendar
+    if (resolvedEmail) {
+      event.attendees = [{ email: resolvedEmail }];
     }
 
     // Only add conference data if supported
