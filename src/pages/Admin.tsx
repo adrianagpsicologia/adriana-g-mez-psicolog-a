@@ -32,6 +32,8 @@ const Admin = () => {
   const [newBlockedReason, setNewBlockedReason] = useState("");
   // Patients
   const [patients, setPatients] = useState<any[]>([]);
+  const [patientBonos, setPatientBonos] = useState<any[]>([]);
+  const [patientBookingCounts, setPatientBookingCounts] = useState<Record<string, number>>({});
   const [newPatientName, setNewPatientName] = useState("");
   const [newPatientEmail, setNewPatientEmail] = useState("");
   const [creatingPatient, setCreatingPatient] = useState(false);
@@ -89,11 +91,20 @@ const Admin = () => {
   };
 
   const fetchPatients = async () => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (data) setPatients(data);
+    const [profilesRes, bonosRes, bookingsRes] = await Promise.all([
+      supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+      supabase.from("patient_bonos").select("*, bono:bonos(name, service:services(name))").eq("payment_status", "paid"),
+      supabase.from("bookings").select("user_id, status").eq("status", "completed"),
+    ]);
+    if (profilesRes.data) setPatients(profilesRes.data);
+    if (bonosRes.data) setPatientBonos(bonosRes.data);
+    if (bookingsRes.data) {
+      const counts: Record<string, number> = {};
+      bookingsRes.data.forEach((b: any) => {
+        counts[b.user_id] = (counts[b.user_id] || 0) + 1;
+      });
+      setPatientBookingCounts(counts);
+    }
   };
 
   const fetchServices = async () => {
@@ -708,26 +719,43 @@ const Admin = () => {
             {/* Patient list */}
             <div>
               <h2 className="heading-card mb-4">Pacientes registrados</h2>
-              {patients.map((p) => (
-                <div key={p.id} className="card-elevated mb-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">{p.full_name || "Sin nombre"}</p>
-                      <p className="text-sm text-muted-foreground">{p.phone}</p>
+              {patients.map((p) => {
+                const pBonos = patientBonos.filter((b: any) => b.user_id === p.user_id);
+                const completedCount = patientBookingCounts[p.user_id] || 0;
+                return (
+                  <div key={p.id} className="card-elevated mb-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <p className="font-medium">{p.full_name || "Sin nombre"}</p>
+                        <p className="text-sm text-muted-foreground">{p.phone}</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setAdminBookingPatient(p);
+                          setTab("admin-booking");
+                        }}
+                      >
+                        <Calendar size={14} /> Asignar cita
+                      </Button>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setAdminBookingPatient(p);
-                        setTab("admin-booking");
-                      }}
-                    >
-                      <Calendar size={14} /> Asignar cita
-                    </Button>
+                    <div className="text-sm text-muted-foreground space-y-1 border-t border-border pt-2">
+                      <p>Sesiones realizadas: <span className="font-medium text-foreground">{completedCount}</span></p>
+                      {pBonos.length > 0 ? (
+                        pBonos.map((b: any) => (
+                          <div key={b.id} className="flex items-center gap-3">
+                            <span>{b.bono?.name}:</span>
+                            <span className="font-medium text-foreground">{b.sessions_remaining}/{b.sessions_total} sesiones restantes</span>
+                          </div>
+                        ))
+                      ) : (
+                        <p>Sin bonos activos</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {patients.length === 0 && <p className="text-muted-foreground text-sm">No hay pacientes registrados.</p>}
             </div>
           </div>

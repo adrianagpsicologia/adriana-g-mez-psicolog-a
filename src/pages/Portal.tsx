@@ -134,8 +134,10 @@ const Portal = () => {
   const upcomingBookings = bookings.filter(
     (b) => (b.status === "confirmed" || b.status === "pending") && new Date(`${b.booking_date}T${b.start_time}`) >= new Date()
   );
+  // Only show completed sessions in history (not cancelled or no_show)
   const pastBookings = bookings.filter(
-    (b) => (b.status !== "confirmed" && b.status !== "pending") || new Date(`${b.booking_date}T${b.start_time}`) < new Date()
+    (b) => b.status === "completed" || 
+      ((b.status === "confirmed") && new Date(`${b.booking_date}T${b.start_time}`) < new Date())
   );
 
   return (
@@ -170,13 +172,15 @@ const Portal = () => {
           </p>
         </div>
 
-        {/* Active bonos */}
-        {bonos.length > 0 && (
-          <section>
-            <h2 className="heading-card mb-4 flex items-center gap-2">
-              <Package size={20} />
-              Mis Bonos
-            </h2>
+        {/* Session balance */}
+        <section>
+          <h2 className="heading-card mb-4 flex items-center gap-2">
+            <Package size={20} />
+            Mis sesiones disponibles
+          </h2>
+          {bonos.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No tienes bonos activos. Puedes adquirir uno al reservar.</p>
+          ) : (
             <div className="grid sm:grid-cols-2 gap-4">
               {bonos.map((bono) => (
                 <div key={bono.id} className="card-elevated">
@@ -191,14 +195,14 @@ const Portal = () => {
                       </div>
                     </div>
                     <span className="text-sm font-medium">
-                      {bono.sessions_remaining}/{bono.sessions_total} sesiones
+                      {bono.sessions_remaining}/{bono.sessions_total} sesiones restantes
                     </span>
                   </div>
                 </div>
               ))}
             </div>
-          </section>
-        )}
+          )}
+        </section>
 
         {/* Book new session */}
         <div className="flex gap-3">
