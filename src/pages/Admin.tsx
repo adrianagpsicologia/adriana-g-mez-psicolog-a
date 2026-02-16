@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, LogOut, Plus, Trash2, Calendar, Users, Clock, Check, X, Pencil, History, ChevronDown } from "lucide-react";
+import { ArrowLeft, LogOut, Plus, Trash2, Calendar, Users, Clock, Check, X, Pencil, History, ChevronDown, Minus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -44,6 +44,7 @@ const Admin = () => {
   const [adminBookingDate, setAdminBookingDate] = useState("");
   const [adminBookingTime, setAdminBookingTime] = useState("");
   const [services, setServices] = useState<any[]>([]);
+  const [availableBonos, setAvailableBonos] = useState<any[]>([]);
   // Modify modal
   const [modifyingBooking, setModifyingBooking] = useState<any>(null);
   const [modifyDate, setModifyDate] = useState("");
@@ -108,8 +109,40 @@ const Admin = () => {
   };
 
   const fetchServices = async () => {
-    const { data } = await supabase.from("services").select("*").eq("is_active", true);
-    if (data) setServices(data);
+    const [servicesRes, bonosRes] = await Promise.all([
+      supabase.from("services").select("*").eq("is_active", true),
+      supabase.from("bonos").select("*, service:services(name)").eq("is_active", true),
+    ]);
+    if (servicesRes.data) setServices(servicesRes.data);
+    if (bonosRes.data) setAvailableBonos(bonosRes.data);
+  };
+
+  const handleAdjustBonoSessions = async (patientBonoId: string, delta: number) => {
+    const bono = patientBonos.find((b: any) => b.id === patientBonoId);
+    if (!bono) return;
+    const newRemaining = Math.max(0, bono.sessions_remaining + delta);
+    await supabase.from("patient_bonos").update({ sessions_remaining: newRemaining }).eq("id", patientBonoId);
+    toast({ title: "Sesiones actualizadas", description: `Sesiones restantes: ${newRemaining}` });
+    fetchPatients();
+  };
+
+  const handleAssignBono = async (patient: any, bonoId: string) => {
+    const bono = availableBonos.find((b: any) => b.id === bonoId);
+    if (!bono) return;
+    const { error } = await supabase.from("patient_bonos").insert({
+      user_id: patient.user_id,
+      bono_id: bonoId,
+      sessions_total: bono.sessions_total,
+      sessions_remaining: bono.sessions_total,
+      payment_method: "transfer",
+      payment_status: "paid",
+    });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Bono asignado", description: `${bono.name} asignado a ${patient.full_name}` });
+      fetchPatients();
+    }
   };
 
   const handleCreatePatient = async () => {
@@ -740,18 +773,41 @@ const Admin = () => {
                         <Calendar size={14} /> Asignar cita
                       </Button>
                     </div>
-                    <div className="text-sm text-muted-foreground space-y-1 border-t border-border pt-2">
+                    <div className="text-sm text-muted-foreground space-y-2 border-t border-border pt-2">
                       <p>Sesiones realizadas: <span className="font-medium text-foreground">{completedCount}</span></p>
-                      {pBonos.length > 0 ? (
-                        pBonos.map((b: any) => (
-                          <div key={b.id} className="flex items-center gap-3">
-                            <span>{b.bono?.name}:</span>
-                            <span className="font-medium text-foreground">{b.sessions_remaining}/{b.sessions_total} sesiones restantes</span>
+                      {pBonos.length > 0 && pBonos.map((b: any) => (
+                        <div key={b.id} className="flex items-center gap-3 flex-wrap">
+                          <span>{b.bono?.name}:</span>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleAdjustBonoSessions(b.id, -1)} disabled={b.sessions_remaining <= 0}>
+                              <Minus size={12} />
+                            </Button>
+                            <span className="font-medium text-foreground min-w-[60px] text-center">{b.sessions_remaining}/{b.sessions_total}</span>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleAdjustBonoSessions(b.id, 1)}>
+                              <Plus size={12} />
+                            </Button>
                           </div>
-                        ))
-                      ) : (
-                        <p>Sin bonos activos</p>
-                      )}
+                          <span className="text-xs">restantes</span>
+                        </div>
+                      ))}
+                      {/* Assign bono */}
+                      <div className="flex items-center gap-2 pt-1">
+                        <select
+                          className="rounded-md border border-border bg-card text-sm px-2 py-1 z-10"
+                          defaultValue=""
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              handleAssignBono(p, e.target.value);
+                              e.target.value = "";
+                            }
+                          }}
+                        >
+                          <option value="">Asignar bono...</option>
+                          {availableBonos.map((ab: any) => (
+                            <option key={ab.id} value={ab.id}>{ab.name}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
                 );
