@@ -121,16 +121,15 @@ serve(async (req) => {
 
     const calData = await calRes.json();
 
-    // Extract busy time ranges (HH:MM format)
+    // Extract busy time ranges (HH:MM format) preserving the event's local timezone
     const busySlots = (calData.items || [])
       .filter((event: any) => event.start?.dateTime && event.end?.dateTime && event.status !== "cancelled")
       .map((event: any) => {
-        const start = new Date(event.start.dateTime);
-        const end = new Date(event.end.dateTime);
-        return {
-          start: `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`,
-          end: `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`,
-        };
+        // dateTime includes timezone offset (e.g. "2026-02-17T11:00:00+01:00")
+        // Extract the local time directly from the ISO string to avoid UTC conversion
+        const startLocal = event.start.dateTime.substring(11, 16); // "HH:MM"
+        const endLocal = event.end.dateTime.substring(11, 16);
+        return { start: startLocal, end: endLocal };
       });
 
     return new Response(JSON.stringify({ busySlots }), {
