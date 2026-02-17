@@ -126,6 +126,18 @@ const Admin = () => {
     fetchPatients();
   };
 
+  const handleDeletePatientBono = async (patientBono: any) => {
+    const name = patientBono.bono?.name || "Asignación";
+    if (!confirm(`¿Eliminar "${name}" de este paciente?`)) return;
+    const { error } = await supabase.from("patient_bonos").delete().eq("id", patientBono.id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Eliminado", description: `${name} eliminado correctamente.` });
+      fetchPatients();
+    }
+  };
+
   const handleAssignBono = async (patient: any, bonoId: string) => {
     const bono = availableBonos.find((b: any) => b.id === bonoId);
     if (!bono) return;
@@ -840,6 +852,9 @@ const Admin = () => {
                             </Button>
                           </div>
                           <span className="text-xs">restantes</span>
+                          <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive hover:text-destructive" onClick={() => handleDeletePatientBono(b)}>
+                            <Trash2 size={10} />
+                          </Button>
                         </div>
                       ))}
                       {/* Assign sessions */}
