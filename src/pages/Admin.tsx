@@ -169,6 +169,24 @@ const Admin = () => {
     }
   };
 
+  const handleDeletePatient = async (patient: any) => {
+    if (!confirm(`¿Estás segura de que quieres eliminar el perfil de ${patient.full_name || "este paciente"}? Esta acción no se puede deshacer.`)) return;
+    try {
+      // Delete patient bonos first
+      await supabase.from("patient_bonos").delete().eq("user_id", patient.user_id);
+      // Delete bookings
+      await supabase.from("bookings").delete().eq("user_id", patient.user_id);
+      // Delete profile
+      const { error } = await supabase.from("profiles").delete().eq("user_id", patient.user_id);
+      if (error) throw error;
+      toast({ title: "Perfil eliminado", description: `${patient.full_name || "Paciente"} eliminado correctamente.` });
+      fetchPatients();
+      fetchBookings();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+  };
+
   const handleCreatePatient = async () => {
     if (!newPatientName || !newPatientEmail) return;
     setCreatingPatient(true);
@@ -786,16 +804,26 @@ const Admin = () => {
                         <p className="font-medium">{p.full_name || "Sin nombre"}</p>
                         <p className="text-sm text-muted-foreground">{p.phone}</p>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setAdminBookingPatient(p);
-                          setTab("admin-booking");
-                        }}
-                      >
-                        <Calendar size={14} /> Asignar cita
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setAdminBookingPatient(p);
+                            setTab("admin-booking");
+                          }}
+                        >
+                          <Calendar size={14} /> Asignar cita
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => handleDeletePatient(p)}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
                     </div>
                     <div className="text-sm text-muted-foreground space-y-2 border-t border-border pt-2">
                       <p>Sesiones realizadas: <span className="font-medium text-foreground">{completedCount}</span></p>
