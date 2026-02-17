@@ -234,7 +234,7 @@ const Admin = () => {
         booking_date: adminBookingDate,
         start_time: adminBookingTime + ":00",
         end_time: endTime,
-        status: "pending",
+        status: "confirmed",
         payment_method: "stripe",
         payment_status: "pending",
       });
