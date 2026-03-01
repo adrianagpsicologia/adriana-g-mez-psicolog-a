@@ -11,7 +11,7 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
   const payload = {
     iss: serviceAccount.client_email,
     sub: "adriana@adrianagpsicologia.com",
-    scope: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events",
+    scope: "https://www.googleapis.com/auth/calendar",
     aud: "https://oauth2.googleapis.com/token",
     exp: now + 3600,
     iat: now,
