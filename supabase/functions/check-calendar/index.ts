@@ -10,7 +10,7 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
   const header = { alg: "RS256", typ: "JWT" };
   const payload = {
     iss: serviceAccount.client_email,
-    sub: "adriana@adrianagpsicologia.com",
+    // sub removed temporarily to test direct auth
     scope: "https://www.googleapis.com/auth/calendar",
     aud: "https://oauth2.googleapis.com/token",
     exp: now + 3600,
@@ -104,6 +104,9 @@ serve(async (req) => {
     }
     const serviceAccount = typeof parsed === 'string' ? JSON.parse(parsed) : parsed;
     console.log("Service account email:", serviceAccount.client_email);
+    console.log("Service account client_id:", serviceAccount.client_id);
+    console.log("Service account project_id:", serviceAccount.project_id);
+    console.log("Private key starts with:", serviceAccount.private_key?.substring(0, 30));
     const accessToken = await getAccessToken(serviceAccount);
 
     console.log("Calendar ID being queried:", calendarId);
