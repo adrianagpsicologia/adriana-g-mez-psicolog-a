@@ -107,52 +107,81 @@ serve(async (req) => {
 
     console.log("Calendar ID being queried:", calendarId);
 
-    // Query events for the given date using Madrid timezone
-    // Google Calendar API requires RFC3339 timestamps
     const timeMin = `${date}T00:00:00+01:00`;
     const timeMax = `${date}T23:59:59+01:00`;
-    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime&timeZone=Europe%2FMadrid`;
 
-    console.log("Calendar API URL:", url);
-
-    const calRes = await fetch(url, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+    // Use FreeBusy API - works with public/shared calendars
+    const freeBusyUrl = `https://www.googleapis.com/calendar/v3/freeBusy`;
+    const freeBusyRes = await fetch(freeBusyUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        timeMin,
+        timeMax,
+        timeZone: "Europe/Madrid",
+        items: [{ id: calendarId }],
+      }),
     });
 
-    if (!calRes.ok) {
-      const errBody = await calRes.text();
-      throw new Error(`Calendar API error [${calRes.status}]: ${errBody}`);
-    }
+    const freeBusyData = await freeBusyRes.json();
+    console.log("FreeBusy response:", JSON.stringify(freeBusyData));
 
-    const calData = await calRes.json();
-    
-    console.log("Total events found:", (calData.items || []).length);
-    console.log("Events:", JSON.stringify((calData.items || []).map((e: any) => ({
-      summary: e.summary,
-      start: e.start,
-      end: e.end,
-      status: e.status,
-    }))));
+    let busySlots: { start: string; end: string }[] = [];
 
-    // Extract busy time ranges (HH:MM format) preserving the event's local timezone
-    const busySlots = (calData.items || [])
-      .filter((event: any) => {
-        // Include all-day events too (they have start.date instead of start.dateTime)
-        const hasTime = event.start?.dateTime && event.end?.dateTime;
-        const isAllDay = event.start?.date && event.end?.date;
-        return (hasTime || isAllDay) && event.status !== "cancelled";
-      })
-      .map((event: any) => {
-        if (event.start.date) {
-          // All-day event - block the entire day
-          return { start: "00:00", end: "23:59" };
-        }
-        // dateTime includes timezone offset (e.g. "2026-02-17T11:00:00+01:00")
-        // Extract the local time directly from the ISO string to avoid UTC conversion
-        const startLocal = event.start.dateTime.substring(11, 16); // "HH:MM"
-        const endLocal = event.end.dateTime.substring(11, 16);
+    if (freeBusyRes.ok && freeBusyData.calendars?.[calendarId]) {
+      const calendarBusy = freeBusyData.calendars[calendarId];
+      
+      if (calendarBusy.errors?.length) {
+        console.error("FreeBusy calendar errors:", JSON.stringify(calendarBusy.errors));
+      }
+
+      busySlots = (calendarBusy.busy || []).map((slot: any) => {
+        // FreeBusy returns ISO timestamps, extract local time
+        // The timestamps include timezone info
+        const startDate = new Date(slot.start);
+        const endDate = new Date(slot.end);
+        
+        // Convert to Madrid time by formatting
+        const startLocal = slot.start.includes("+") || slot.start.includes("Z")
+          ? `${String(startDate.getUTCHours() + 1).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`
+          : slot.start.substring(11, 16);
+        const endLocal = slot.end.includes("+") || slot.end.includes("Z")
+          ? `${String(endDate.getUTCHours() + 1).padStart(2, "0")}:${String(endDate.getUTCMinutes()).padStart(2, "0")}`
+          : slot.end.substring(11, 16);
+        
         return { start: startLocal, end: endLocal };
       });
+    } else {
+      console.log("FreeBusy failed or no data, trying Events API...");
+      
+      const eventsUrl = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime&timeZone=Europe%2FMadrid`;
+      const calRes = await fetch(eventsUrl, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      if (!calRes.ok) {
+        const calErr = await calRes.text();
+        throw new Error(`Calendar API error [${calRes.status}]: ${calErr}`);
+      }
+
+      const calData = await calRes.json();
+      busySlots = (calData.items || [])
+        .filter((event: any) => {
+          const hasTime = event.start?.dateTime && event.end?.dateTime;
+          const isAllDay = event.start?.date && event.end?.date;
+          return (hasTime || isAllDay) && event.status !== "cancelled";
+        })
+        .map((event: any) => {
+          if (event.start.date) return { start: "00:00", end: "23:59" };
+          return {
+            start: event.start.dateTime.substring(11, 16),
+            end: event.end.dateTime.substring(11, 16),
+          };
+        });
+    }
 
     console.log("Busy slots:", JSON.stringify(busySlots));
 
