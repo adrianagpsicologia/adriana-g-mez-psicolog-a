@@ -81,8 +81,7 @@ serve(async (req) => {
     }
 
     const serviceAccountJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON");
-    // Try primary Gmail calendar
-    const calendarId = "adrianagpsicologia@gmail.com";
+    const calendarId = "adriana@adrianagpsicologia.com";
 
     if (!serviceAccountJson) {
       return new Response(JSON.stringify({ error: "Google Calendar not configured" }), {
