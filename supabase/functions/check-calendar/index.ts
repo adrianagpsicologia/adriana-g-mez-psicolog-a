@@ -111,12 +111,17 @@ serve(async (req) => {
 
     console.log("Calendar ID being queried:", calendarId);
 
-    // List accessible calendars for debugging
-    const calListRes = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList", {
-      headers: { Authorization: `Bearer ${accessToken}` },
+    // Ensure the shared calendar is in the service account's calendar list
+    const addCalRes = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id: calendarId }),
     });
-    const calListData = await calListRes.json();
-    console.log("Accessible calendars:", JSON.stringify(calListData.items?.map((c: any) => ({ id: c.id, summary: c.summary })) || []));
+    const addCalData = await addCalRes.json();
+    console.log("Add calendar result:", addCalRes.status, JSON.stringify(addCalData));
 
     const timeMin = `${date}T00:00:00+01:00`;
     const timeMax = `${date}T23:59:59+01:00`;
