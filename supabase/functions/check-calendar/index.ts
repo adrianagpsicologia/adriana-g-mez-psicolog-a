@@ -105,11 +105,15 @@ serve(async (req) => {
     console.log("Service account email:", serviceAccount.client_email);
     const accessToken = await getAccessToken(serviceAccount);
 
+    console.log("Calendar ID being queried:", calendarId);
+
     // Query events for the given date using Madrid timezone
     // Google Calendar API requires RFC3339 timestamps
     const timeMin = `${date}T00:00:00+01:00`;
     const timeMax = `${date}T23:59:59+01:00`;
     const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime&timeZone=Europe%2FMadrid`;
+
+    console.log("Calendar API URL:", url);
 
     const calRes = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -121,17 +125,36 @@ serve(async (req) => {
     }
 
     const calData = await calRes.json();
+    
+    console.log("Total events found:", (calData.items || []).length);
+    console.log("Events:", JSON.stringify((calData.items || []).map((e: any) => ({
+      summary: e.summary,
+      start: e.start,
+      end: e.end,
+      status: e.status,
+    }))));
 
     // Extract busy time ranges (HH:MM format) preserving the event's local timezone
     const busySlots = (calData.items || [])
-      .filter((event: any) => event.start?.dateTime && event.end?.dateTime && event.status !== "cancelled")
+      .filter((event: any) => {
+        // Include all-day events too (they have start.date instead of start.dateTime)
+        const hasTime = event.start?.dateTime && event.end?.dateTime;
+        const isAllDay = event.start?.date && event.end?.date;
+        return (hasTime || isAllDay) && event.status !== "cancelled";
+      })
       .map((event: any) => {
+        if (event.start.date) {
+          // All-day event - block the entire day
+          return { start: "00:00", end: "23:59" };
+        }
         // dateTime includes timezone offset (e.g. "2026-02-17T11:00:00+01:00")
         // Extract the local time directly from the ISO string to avoid UTC conversion
         const startLocal = event.start.dateTime.substring(11, 16); // "HH:MM"
         const endLocal = event.end.dateTime.substring(11, 16);
         return { start: startLocal, end: endLocal };
       });
+
+    console.log("Busy slots:", JSON.stringify(busySlots));
 
     return new Response(JSON.stringify({ busySlots }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
