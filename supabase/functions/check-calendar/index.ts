@@ -105,10 +105,11 @@ serve(async (req) => {
     console.log("Service account email:", serviceAccount.client_email);
     const accessToken = await getAccessToken(serviceAccount);
 
-    // Query events for the given date
-    const timeMin = `${date}T00:00:00Z`;
-    const timeMax = `${date}T23:59:59Z`;
-    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?timeMin=${timeMin}&timeMax=${timeMax}&singleEvents=true&orderBy=startTime`;
+    // Query events for the given date using Madrid timezone
+    // Google Calendar API requires RFC3339 timestamps
+    const timeMin = `${date}T00:00:00+01:00`;
+    const timeMax = `${date}T23:59:59+01:00`;
+    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime&timeZone=Europe%2FMadrid`;
 
     const calRes = await fetch(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
