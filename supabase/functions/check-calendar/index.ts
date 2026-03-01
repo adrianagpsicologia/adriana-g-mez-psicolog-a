@@ -81,9 +81,10 @@ serve(async (req) => {
     }
 
     const serviceAccountJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON");
-    const calendarId = Deno.env.get("GOOGLE_CALENDAR_ID");
+    // Hardcoded to bypass secret caching issues
+    const calendarId = "adriana@adrianagpsicologia.com";
 
-    if (!serviceAccountJson || !calendarId) {
+    if (!serviceAccountJson) {
       return new Response(JSON.stringify({ error: "Google Calendar not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
