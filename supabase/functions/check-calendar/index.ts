@@ -111,6 +111,13 @@ serve(async (req) => {
 
     console.log("Calendar ID being queried:", calendarId);
 
+    // List accessible calendars for debugging
+    const calListRes = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const calListData = await calListRes.json();
+    console.log("Accessible calendars:", JSON.stringify(calListData.items?.map((c: any) => ({ id: c.id, summary: c.summary })) || []));
+
     const timeMin = `${date}T00:00:00+01:00`;
     const timeMax = `${date}T23:59:59+01:00`;
 
