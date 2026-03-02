@@ -5,6 +5,77 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+async function getAccessToken(serviceAccount: any): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: "RS256", typ: "JWT" };
+  const payload = {
+    iss: serviceAccount.client_email,
+    sub: serviceAccount.client_email,
+    scope: "https://www.googleapis.com/auth/calendar.readonly",
+    aud: "https://oauth2.googleapis.com/token",
+    exp: now + 3600,
+    iat: now,
+  };
+
+  const encode = (obj: any) => {
+    const json = new TextEncoder().encode(JSON.stringify(obj));
+    return btoa(String.fromCharCode(...json)).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  };
+
+  const headerB64 = encode(header);
+  const payloadB64 = encode(payload);
+  const unsignedToken = `${headerB64}.${payloadB64}`;
+
+  const pemContent = serviceAccount.private_key
+    .replace(/-----BEGIN PRIVATE KEY-----/, "")
+    .replace(/-----END PRIVATE KEY-----/, "")
+    .replace(/\n/g, "");
+
+  const binaryKey = Uint8Array.from(atob(pemContent), (c) => c.charCodeAt(0));
+
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    binaryKey,
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+
+  const signature = await crypto.subtle.sign(
+    "RSASSA-PKCS1-v1_5",
+    key,
+    new TextEncoder().encode(unsignedToken)
+  );
+
+  const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature)))
+    .replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+
+  const jwt = `${unsignedToken}.${signatureB64}`;
+
+  const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`,
+  });
+
+  const tokenData = await tokenRes.json();
+  if (!tokenRes.ok) {
+    throw new Error(`Token exchange failed: ${JSON.stringify(tokenData)}`);
+  }
+  return tokenData.access_token;
+}
+
+function parseServiceAccount(raw: string): any {
+  let parsed: any;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    const cleaned = raw.trim().replace(/^["']|["']$/g, '');
+    parsed = JSON.parse(cleaned);
+  }
+  return typeof parsed === 'string' ? JSON.parse(parsed) : parsed;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -19,24 +90,30 @@ serve(async (req) => {
       });
     }
 
-    const apiKey = Deno.env.get("GOOGLE_API_KEY");
-    const calendarId = "adriana@adrianagpsicologia.com";
+    const serviceAccountJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON");
+    const calendarId = Deno.env.get("GOOGLE_CALENDAR_ID") || "adriana@adrianagpsicologia.com";
 
-    if (!apiKey) {
-      return new Response(JSON.stringify({ error: "Google API Key not configured" }), {
+    if (!serviceAccountJson) {
+      return new Response(JSON.stringify({ error: "Google Service Account not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    const serviceAccount = parseServiceAccount(serviceAccountJson);
+    const accessToken = await getAccessToken(serviceAccount);
+
     const timeMin = `${date}T00:00:00+01:00`;
     const timeMax = `${date}T23:59:59+01:00`;
 
-    // Use FreeBusy API with API key (works with public calendars)
-    const freeBusyUrl = `https://www.googleapis.com/calendar/v3/freeBusy?key=${apiKey}`;
+    // Use FreeBusy API with service account token
+    const freeBusyUrl = `https://www.googleapis.com/calendar/v3/freeBusy`;
     const freeBusyRes = await fetch(freeBusyUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${accessToken}`,
+      },
       body: JSON.stringify({
         timeMin,
         timeMax,
@@ -59,13 +136,8 @@ serve(async (req) => {
         busySlots = (calendarBusy.busy || []).map((slot: any) => {
           const startDate = new Date(slot.start);
           const endDate = new Date(slot.end);
-          // Convert to Europe/Madrid local time
-          const startLocal = slot.start.includes("+") || slot.start.includes("Z")
-            ? `${String(startDate.getUTCHours() + 1).padStart(2, "0")}:${String(startDate.getUTCMinutes()).padStart(2, "0")}`
-            : slot.start.substring(11, 16);
-          const endLocal = slot.end.includes("+") || slot.end.includes("Z")
-            ? `${String(endDate.getUTCHours() + 1).padStart(2, "0")}:${String(endDate.getUTCMinutes()).padStart(2, "0")}`
-            : slot.end.substring(11, 16);
+          const startLocal = startDate.toLocaleTimeString("es-ES", { timeZone: "Europe/Madrid", hour: "2-digit", minute: "2-digit", hour12: false });
+          const endLocal = endDate.toLocaleTimeString("es-ES", { timeZone: "Europe/Madrid", hour: "2-digit", minute: "2-digit", hour12: false });
           return { start: startLocal, end: endLocal };
         });
       }
