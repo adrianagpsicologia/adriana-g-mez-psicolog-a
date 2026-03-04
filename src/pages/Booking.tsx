@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { User, Users, ArrowRight, ArrowLeft } from "lucide-react";
+import { useState, useRef } from "react";
+import { User, Users, ArrowLeft, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
-const GOOGLE_CALENDAR_LINK = "https://calendar.app.google/BExC7nxrzS8QfKTC9";
+const GOOGLE_CALENDAR_EMBED = "https://calendar.google.com/calendar/appointments/schedules/AcZssZ1cM9pW0G5Ox1ypOaCdXMdT8e2ZQbnkYYlsa0qKXd3gXJw7C1OHTQF_Ff_J3bDBcEvMUePe1hRE?gv=true";
 
 const serviceOptions = [
   {
@@ -39,6 +39,15 @@ const serviceOptions = [
 
 const Booking = () => {
   const [selected, setSelected] = useState<string | null>(null);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const calendarRef = useRef<HTMLDivElement>(null);
+
+  const handleContinue = () => {
+    setShowCalendar(true);
+    setTimeout(() => {
+      calendarRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -63,7 +72,7 @@ const Booking = () => {
             {serviceOptions.map((option) => (
               <button
                 key={option.id}
-                onClick={() => setSelected(option.id)}
+                onClick={() => { setSelected(option.id); setShowCalendar(false); }}
                 className={`relative w-full text-left p-5 rounded-xl border-2 transition-all duration-200 ${
                   selected === option.id
                     ? "border-foreground bg-accent/50 shadow-md"
@@ -97,35 +106,45 @@ const Booking = () => {
             ))}
           </div>
 
-          <div className="mt-8 text-center">
-            <Button
-              variant="cta"
-              size="lg"
-              className="min-w-[220px]"
-              disabled={!selected}
-              asChild={!!selected}
-            >
-              {selected ? (
-                <a
-                  href={GOOGLE_CALENDAR_LINK}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Continuar con la reserva
-                  <ArrowRight size={18} className="ml-2" />
-                </a>
-              ) : (
-                <span>
-                  Selecciona una opción
-                </span>
-              )}
-            </Button>
-          </div>
-
-          <p className="text-center text-xs text-muted-foreground mt-6">
-            Serás redirigido a Google Calendar para elegir fecha y hora
-          </p>
+          {selected && !showCalendar && (
+            <div className="mt-8 text-center animate-fade-in">
+              <Button
+                variant="cta"
+                size="lg"
+                className="min-w-[220px]"
+                onClick={handleContinue}
+              >
+                Elegir fecha y hora
+                <ArrowDown size={18} className="ml-2" />
+              </Button>
+            </div>
+          )}
         </div>
+
+        {/* Embedded Google Calendar */}
+        {showCalendar && (
+          <div ref={calendarRef} className="mt-12 max-w-4xl mx-auto animate-fade-in">
+            <div className="text-center mb-6">
+              <h2 className="font-heading text-xl font-medium">Elige tu fecha y hora</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                {serviceOptions.find(o => o.id === selected)?.title} — {serviceOptions.find(o => o.id === selected)?.price}
+              </p>
+            </div>
+            <div className="rounded-xl overflow-hidden border border-border shadow-soft bg-background">
+              <iframe
+                src={GOOGLE_CALENDAR_EMBED}
+                style={{ border: 0 }}
+                width="100%"
+                height="700"
+                title="Reservar cita - Google Calendar"
+                className="w-full"
+              />
+            </div>
+            <p className="text-center text-xs text-muted-foreground mt-4">
+              Calendario proporcionado por Google Calendar
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
