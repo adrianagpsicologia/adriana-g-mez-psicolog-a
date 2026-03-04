@@ -1,5 +1,6 @@
 import { Brain, Heart, Users, Sparkles, GraduationCap, Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const situations = [
   "Si notas un mayor nivel de estrés o ansiedad",
@@ -105,7 +106,7 @@ const ServicesSection = () => {
         {/* CTA */}
         <div className="text-center mt-12">
           <Button variant="cta" size="lg" asChild>
-            <a href="https://adrianagpsicologiagmailcom.simplybook.it/v2/" target="_blank" rel="noopener noreferrer">Reservar primera sesión</a>
+            <Link to="/reservar">Reservar primera sesión</Link>
           </Button>
         </div>
       </div>
