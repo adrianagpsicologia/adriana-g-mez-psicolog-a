@@ -3,7 +3,7 @@ import { User, Users, ArrowLeft, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
-const GOOGLE_CALENDAR_EMBED = "https://calendar.google.com/calendar/appointments/schedules/AcZssZ1cM9pW0G5Ox1ypOaCdXMdT8e2ZQbnkYYlsa0qKXd3gXJw7C1OHTQF_Ff_J3bDBcEvMUePe1hRE?gv=true";
+const GOOGLE_CALENDAR_EMBED = "https://calendar.google.com/calendar/appointments/AcZssZ1aokxC5rOfCp9xN0jNOwf1K4FGXEwrbx6YUc8=?gv=true";
 
 const serviceOptions = [
   {
