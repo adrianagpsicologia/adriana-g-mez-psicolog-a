@@ -123,7 +123,7 @@ const PricingSection = () => {
                 className="w-full"
                 asChild
               >
-                <Link to="/auth">Reservar</Link>
+                <a href="https://calendar.app.google/BExC7nxrzS8QfKTC9" target="_blank" rel="noopener noreferrer">Reservar</a>
               </Button>
             </div>
           ))}

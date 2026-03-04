@@ -56,7 +56,7 @@ const Navigation = () => {
                 <Link to="/portal"><User size={16} /> Mi portal</Link>
               </Button>
               <Button variant="cta" size="sm" asChild>
-                <Link to="/reservar">Reservar cita</Link>
+                <a href="https://calendar.app.google/BExC7nxrzS8QfKTC9" target="_blank" rel="noopener noreferrer">Reservar cita</a>
               </Button>
             </div>
           ) : (
@@ -65,7 +65,7 @@ const Navigation = () => {
                 <Link to="/auth">Iniciar sesión</Link>
               </Button>
               <Button variant="cta" size="sm" asChild>
-                <Link to="/auth">Reservar cita</Link>
+                <a href="https://calendar.app.google/BExC7nxrzS8QfKTC9" target="_blank" rel="noopener noreferrer">Reservar cita</a>
               </Button>
             </div>
           )}
@@ -101,12 +101,12 @@ const Navigation = () => {
                   <Link to="/portal" onClick={() => setIsOpen(false)}>Mi portal</Link>
                 </Button>
                 <Button variant="cta" className="mt-2" asChild>
-                  <Link to="/reservar" onClick={() => setIsOpen(false)}>Reservar cita</Link>
+                  <a href="https://calendar.app.google/BExC7nxrzS8QfKTC9" target="_blank" rel="noopener noreferrer" onClick={() => setIsOpen(false)}>Reservar cita</a>
                 </Button>
               </>
             ) : (
               <Button variant="cta" className="mt-4" asChild>
-                <Link to="/auth" onClick={() => setIsOpen(false)}>Reservar cita</Link>
+                <a href="https://calendar.app.google/BExC7nxrzS8QfKTC9" target="_blank" rel="noopener noreferrer" onClick={() => setIsOpen(false)}>Reservar cita</a>
               </Button>
             )}
           </div>
