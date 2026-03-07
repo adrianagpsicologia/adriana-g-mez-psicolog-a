@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import BookingCalendar from "@/components/BookingCalendar";
 import { format, addDays, startOfDay, getDay } from "date-fns";
+import { es } from "date-fns/locale";
 import { toast } from "sonner";
 
 interface ServiceOption {
