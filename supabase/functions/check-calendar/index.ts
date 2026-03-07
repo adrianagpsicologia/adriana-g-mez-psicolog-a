@@ -115,6 +115,13 @@ serve(async (req) => {
       console.log("Got token via direct service account access");
     }
 
+    // Diagnostic: list calendars the service account can see
+    const calListRes = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList", {
+      headers: { "Authorization": `Bearer ${accessToken}` },
+    });
+    const calListData = await calListRes.json();
+    console.log("Calendar list:", JSON.stringify(calListData));
+
     const timeMin = `${date}T00:00:00+01:00`;
     const timeMax = `${date}T23:59:59+01:00`;
 
