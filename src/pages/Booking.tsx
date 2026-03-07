@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import BookingCalendar from "@/components/BookingCalendar";
 import { format, addDays, startOfDay, getDay } from "date-fns";
+import { es } from "date-fns/locale";
 import { toast } from "sonner";
 
 interface ServiceOption {
@@ -128,6 +129,11 @@ const Booking = () => {
     fetchBusy();
   }, [selectedDate]);
 
+  const toMinutes = (time: string) => {
+    const [h, m] = time.split(":").map(Number);
+    return h * 60 + m;
+  };
+
   // Generate available time slots for selected date
   const timeSlots = useMemo(() => {
     if (!selectedDate || !selected) return [];
@@ -169,11 +175,6 @@ const Booking = () => {
     });
   }, [selectedDate, selected, availability, busySlots, services]);
 
-  const toMinutes = (time: string) => {
-    const [h, m] = time.split(":").map(Number);
-    return h * 60 + m;
-  };
-
   const handleSelectService = (id: string) => {
     setSelected(id);
     setSelectedDate(null);
@@ -182,16 +183,18 @@ const Booking = () => {
   };
 
   const handleContinueToDatetime = () => {
-    if (!user) {
-      toast.info("Inicia sesión para reservar tu cita");
-      navigate("/auth?redirect=/reservar");
-      return;
-    }
     setStep("datetime");
   };
 
   const handleCheckout = async () => {
     if (!selected || !selectedDate || !selectedTime) return;
+
+    if (!user) {
+      toast.info("Inicia sesión para completar tu reserva");
+      navigate("/auth?redirect=/reservar");
+      return;
+    }
+
     const service = services.find((s) => s.id === selected);
     if (!service) return;
 
@@ -328,7 +331,7 @@ const Booking = () => {
               {selectedDate && (
                 <div className="animate-fade-in">
                   <h3 className="font-heading font-medium text-center mb-4">
-                    Horarios disponibles — {format(selectedDate, "d 'de' MMMM", { locale: undefined })}
+                    Horarios disponibles — {format(selectedDate, "d 'de' MMMM", { locale: es })}
                   </h3>
                   {loadingSlots ? (
                     <div className="text-center py-8 text-muted-foreground">
