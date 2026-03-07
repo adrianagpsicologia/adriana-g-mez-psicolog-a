@@ -77,20 +77,9 @@ const Navigation = () => {
                 {link.label}
               </a>
             ))}
-            {user ? (
-              <>
-                <Button variant="ghost" className="mt-2" asChild>
-                  <Link to="/portal" onClick={() => setIsOpen(false)}>Mi portal</Link>
-                </Button>
-                <Button variant="cta" className="mt-2" asChild>
-                  <Link to="/reservar" onClick={() => setIsOpen(false)}>Reservar cita</Link>
-                </Button>
-              </>
-            ) : (
-              <Button variant="cta" className="mt-4" asChild>
-                <Link to="/reservar" onClick={() => setIsOpen(false)}>Reservar cita</Link>
-              </Button>
-            )}
+            <Button variant="cta" className="mt-4" asChild>
+              <Link to="/reservar" onClick={() => setIsOpen(false)}>Reservar cita</Link>
+            </Button>
           </div>
         </div>
       )}
