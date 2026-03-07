@@ -15,9 +15,9 @@ async function getAccessToken(serviceAccount: any, impersonateEmail?: string): P
     exp: now + 3600,
     iat: now,
   };
-  if (impersonateEmail) {
-    payload.sub = impersonateEmail;
-  }
+  // Use impersonation if provided, otherwise use service account's own email
+  payload.sub = impersonateEmail || serviceAccount.client_email;
+
 
   const encode = (obj: any) => {
     const json = new TextEncoder().encode(JSON.stringify(obj));
