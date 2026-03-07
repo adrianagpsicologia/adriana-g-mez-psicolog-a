@@ -152,8 +152,9 @@ const Booking = () => {
       const startMinutes = startH * 60 + startM;
       const endMinutes = endH * 60 + endM;
       const duration = service.durationMinutes;
+      const slotInterval = duration + 10; // 10 min break between sessions
 
-      for (let m = startMinutes; m + duration <= endMinutes; m += duration) {
+      for (let m = startMinutes; m + duration <= endMinutes; m += slotInterval) {
         const sH = String(Math.floor(m / 60)).padStart(2, "0");
         const sM = String(m % 60).padStart(2, "0");
         const eMin = m + duration;
