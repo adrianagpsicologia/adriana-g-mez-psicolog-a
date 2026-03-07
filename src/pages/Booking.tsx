@@ -1,40 +1,23 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { User, Users, ArrowLeft, Clock, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { User, Users, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
-import BookingCalendar from "@/components/BookingCalendar";
-import { format, addDays, startOfDay, getDay } from "date-fns";
-import { es } from "date-fns/locale";
-import { toast } from "sonner";
+
+const GOOGLE_CALENDAR_LINK = "https://calendar.app.google/LyrPpdSjsxyubChb6";
 
 interface ServiceOption {
   id: string;
   icon: typeof User;
   title: string;
   price: string;
-  priceCents: number;
   description: string;
   badge?: string;
-  serviceId: string;
-  bonoId?: string;
-  durationMinutes: number;
 }
 
 const Booking = () => {
-  const { user, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
   const [selected, setSelected] = useState<string | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [services, setServices] = useState<ServiceOption[]>([]);
-  const [availability, setAvailability] = useState<any[]>([]);
-  const [blockedDates, setBlockedDates] = useState<string[]>([]);
-  const [busySlots, setBusySlots] = useState<{ start: string; end: string }[]>([]);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [loadingCheckout, setLoadingCheckout] = useState(false);
-  const [step, setStep] = useState<"service" | "datetime">("service");
 
   // Load services, availability, blocked dates
   useEffect(() => {
