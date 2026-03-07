@@ -118,6 +118,9 @@ serve(async (req) => {
     const timeMin = `${date}T00:00:00+01:00`;
     const timeMax = `${date}T23:59:59+01:00`;
 
+    let busySlots: { start: string; end: string }[] = [];
+
+    // Try FreeBusy API first
     const freeBusyRes = await fetch("https://www.googleapis.com/calendar/v3/freeBusy", {
       method: "POST",
       headers: {
@@ -135,14 +138,11 @@ serve(async (req) => {
     const freeBusyData = await freeBusyRes.json();
     console.log("FreeBusy response:", JSON.stringify(freeBusyData));
 
-    let busySlots: { start: string; end: string }[] = [];
-
+    let freeBusyWorked = false;
     if (freeBusyRes.ok && freeBusyData.calendars?.[calendarId]) {
       const calendarBusy = freeBusyData.calendars[calendarId];
-
-      if (calendarBusy.errors?.length) {
-        console.error("FreeBusy calendar errors:", JSON.stringify(calendarBusy.errors));
-      } else {
+      if (!calendarBusy.errors?.length) {
+        freeBusyWorked = true;
         busySlots = (calendarBusy.busy || []).map((slot: any) => {
           const startDate = new Date(slot.start);
           const endDate = new Date(slot.end);
@@ -151,8 +151,32 @@ serve(async (req) => {
           return { start: startLocal, end: endLocal };
         });
       }
-    } else if (!freeBusyRes.ok) {
-      console.error("FreeBusy API error:", freeBusyRes.status, JSON.stringify(freeBusyData));
+    }
+
+    // Fallback: use Events API if FreeBusy failed
+    if (!freeBusyWorked) {
+      console.log("FreeBusy failed, trying Events API as fallback...");
+      const eventsUrl = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime`;
+      const eventsRes = await fetch(eventsUrl, {
+        headers: { "Authorization": `Bearer ${accessToken}` },
+      });
+      const eventsData = await eventsRes.json();
+      console.log("Events API response status:", eventsRes.status);
+
+      if (eventsRes.ok && eventsData.items) {
+        busySlots = eventsData.items
+          .filter((ev: any) => ev.status !== "cancelled" && ev.start?.dateTime)
+          .map((ev: any) => {
+            const startDate = new Date(ev.start.dateTime);
+            const endDate = new Date(ev.end.dateTime);
+            const startLocal = startDate.toLocaleTimeString("es-ES", { timeZone: "Europe/Madrid", hour: "2-digit", minute: "2-digit", hour12: false });
+            const endLocal = endDate.toLocaleTimeString("es-ES", { timeZone: "Europe/Madrid", hour: "2-digit", minute: "2-digit", hour12: false });
+            return { start: startLocal, end: endLocal };
+          });
+        console.log("Events API found busy slots:", JSON.stringify(busySlots));
+      } else {
+        console.error("Events API also failed:", eventsRes.status, JSON.stringify(eventsData));
+      }
     }
 
     return new Response(JSON.stringify({ busySlots }), {
