@@ -4,10 +4,10 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
 const CALENDAR_LINKS: Record<string, string> = {
-  "sesión individual": "https://calendar.app.google/RAsxzhLgY7K8GzoCA",
-  "sesión de pareja": "https://calendar.app.google/bo7cmxKQnHxp5PWC8",
-  "bono 4 sesiones individual": "https://calendar.app.google/LyrPpdSjsxyubChb6",
-  "bono 4 sesiones pareja": "https://calendar.app.google/YXRXCKo2Y6D1JXQQ9",
+  "sesión individual": "https://calendar.app.google/RAsxzhLgY7K8GzoCA?hl=es",
+  "sesión de pareja": "https://calendar.app.google/bo7cmxKQnHxp5PWC8?hl=es",
+  "bono 4 sesiones individual": "https://calendar.app.google/LyrPpdSjsxyubChb6?hl=es",
+  "bono 4 sesiones pareja": "https://calendar.app.google/YXRXCKo2Y6D1JXQQ9?hl=es",
 };
 
 function getCalendarLink(title: string): string {
