@@ -1,10 +1,22 @@
 import { useState, useEffect } from "react";
 import { User, Users, ArrowLeft, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
-const GOOGLE_CALENDAR_LINK = "https://calendar.app.google/LyrPpdSjsxyubChb6";
+const CALENDAR_LINKS: Record<string, string> = {
+  "sesión individual": "https://calendar.app.google/RAsxzhLgY7K8GzoCA",
+  "sesión de pareja": "https://calendar.app.google/bo7cmxKQnHxp5PWC8",
+  "bono 4 sesiones individual": "https://calendar.app.google/LyrPpdSjsxyubChb6",
+  "bono 4 sesiones pareja": "https://calendar.app.google/YXRXCKo2Y6D1JXQQ9",
+};
+
+function getCalendarLink(title: string): string {
+  const lower = title.toLowerCase();
+  if (lower.includes("bono") && lower.includes("pareja")) return CALENDAR_LINKS["bono 4 sesiones pareja"];
+  if (lower.includes("bono")) return CALENDAR_LINKS["bono 4 sesiones individual"];
+  if (lower.includes("pareja")) return CALENDAR_LINKS["sesión de pareja"];
+  return CALENDAR_LINKS["sesión individual"];
+}
 
 interface ServiceOption {
   id: string;
@@ -13,6 +25,7 @@ interface ServiceOption {
   price: string;
   description: string;
   badge?: string;
+  calendarUrl: string;
 }
 
 const Booking = () => {
@@ -37,6 +50,7 @@ const Booking = () => {
           title: s.name,
           price: `${(s.price_cents / 100).toFixed(0)}€`,
           description: `Sesión de ${s.duration_minutes} minutos`,
+          calendarUrl: getCalendarLink(s.name),
         });
 
         const relatedBonos = bonos.filter((b) => b.service_id === s.id);
@@ -49,6 +63,7 @@ const Booking = () => {
             price: `${(b.price_cents / 100).toFixed(0)}€`,
             description: `${b.sessions_total} sesiones de ${s.duration_minutes} min${savings > 0 ? ` · Ahorro de ${(savings / 100).toFixed(0)}€` : ""}`,
             badge: savings > 0 ? "Más popular" : undefined,
+            calendarUrl: getCalendarLink(b.name),
           });
         });
       });
@@ -58,9 +73,7 @@ const Booking = () => {
     load();
   }, []);
 
-  const handleContinue = () => {
-    window.open(GOOGLE_CALENDAR_LINK, "_blank");
-  };
+  const selectedService = services.find((s) => s.id === selected);
 
   return (
     <div className="min-h-screen bg-background">
@@ -73,7 +86,7 @@ const Booking = () => {
           Volver al inicio
         </Link>
 
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-3xl mx-auto">
           <div className="text-center mb-10">
             <h1 className="heading-section mb-3">Reservar cita</h1>
             <p className="body-large text-muted-foreground">
@@ -89,44 +102,48 @@ const Booking = () => {
               </div>
             ) : (
               services.map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => setSelected(option.id)}
-                  className={`relative w-full text-left p-5 rounded-xl border-2 transition-all duration-200 ${
-                    selected === option.id
-                      ? "border-foreground bg-accent/50 shadow-md"
-                      : "border-border hover:border-foreground/30 hover:bg-accent/20"
-                  }`}
-                >
-                  {option.badge && (
-                    <span className="absolute -top-2.5 right-4 bg-foreground text-background text-xs font-medium px-3 py-0.5 rounded-full">
-                      {option.badge}
-                    </span>
-                  )}
-                  <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-full bg-accent flex items-center justify-center flex-shrink-0">
-                      <option.icon size={20} className="text-foreground" />
-                    </div>
-                    <div className="flex-grow min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <h3 className="font-heading font-medium text-base">{option.title}</h3>
-                        <span className="font-heading font-semibold text-lg flex-shrink-0">{option.price}</span>
+                <div key={option.id}>
+                  <button
+                    onClick={() => setSelected(selected === option.id ? null : option.id)}
+                    className={`relative w-full text-left p-5 rounded-xl border-2 transition-all duration-200 ${
+                      selected === option.id
+                        ? "border-foreground bg-accent/50 shadow-md"
+                        : "border-border hover:border-foreground/30 hover:bg-accent/20"
+                    }`}
+                  >
+                    {option.badge && (
+                      <span className="absolute -top-2.5 right-4 bg-foreground text-background text-xs font-medium px-3 py-0.5 rounded-full">
+                        {option.badge}
+                      </span>
+                    )}
+                    <div className="flex items-center gap-4">
+                      <div className="w-11 h-11 rounded-full bg-accent flex items-center justify-center flex-shrink-0">
+                        <option.icon size={20} className="text-foreground" />
                       </div>
-                      <p className="text-sm text-muted-foreground mt-0.5">{option.description}</p>
+                      <div className="flex-grow min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="font-heading font-medium text-base">{option.title}</h3>
+                          <span className="font-heading font-semibold text-lg flex-shrink-0">{option.price}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-0.5">{option.description}</p>
+                      </div>
                     </div>
-                  </div>
-                </button>
+                  </button>
+
+                  {selected === option.id && (
+                    <div className="mt-4 mb-6 animate-fade-in rounded-xl overflow-hidden border border-border shadow-sm">
+                      <iframe
+                        src={option.calendarUrl}
+                        className="w-full border-0"
+                        style={{ height: "680px" }}
+                        title={`Agendar ${option.title}`}
+                      />
+                    </div>
+                  )}
+                </div>
               ))
             )}
           </div>
-
-          {selected && (
-            <div className="mt-8 text-center animate-fade-in">
-              <Button variant="cta" size="lg" className="min-w-[220px]" onClick={handleContinue}>
-                Agendar cita
-              </Button>
-            </div>
-          )}
         </div>
       </div>
     </div>
