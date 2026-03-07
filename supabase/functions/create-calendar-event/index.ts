@@ -6,11 +6,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-async function getAccessToken(serviceAccount: any, impersonateEmail?: string): Promise<string> {
+async function getAccessToken(serviceAccount: any): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: "RS256", typ: "JWT" };
   const payload: any = {
     iss: serviceAccount.client_email,
+    sub: serviceAccount.client_email,
     scope: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events",
     aud: "https://oauth2.googleapis.com/token",
     exp: now + 3600,
@@ -104,7 +105,7 @@ serve(async (req) => {
     }
 
     const serviceAccountJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON");
-    const calendarId = "adriana@adrianagomezpsicologia.com";
+    const calendarId = Deno.env.get("GOOGLE_CALENDAR_ID") || "c_bbf6aa6d0a95567141bd23cdb9b71dc9ed9aedd641e3951484768e9beb3689cd@group.calendar.google.com";
 
     if (!serviceAccountJson) {
       return new Response(JSON.stringify({ error: "Google Calendar not configured" }), {
@@ -114,7 +115,7 @@ serve(async (req) => {
     }
 
     const serviceAccount = parseServiceAccount(serviceAccountJson);
-    const accessToken = await getAccessToken(serviceAccount, calendarId);
+    const accessToken = await getAccessToken(serviceAccount);
 
     const startHHMM = startTime.substring(0, 5);
     const endHHMM = endTime.substring(0, 5);
