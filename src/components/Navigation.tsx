@@ -48,25 +48,9 @@ const Navigation = () => {
               {link.label}
             </a>
           ))}
-          {user ? (
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/portal"><User size={16} /> Mi portal</Link>
-              </Button>
-              <Button variant="cta" size="sm" asChild>
-                <Link to="/reservar">Reservar cita</Link>
-              </Button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/auth">Iniciar sesión</Link>
-              </Button>
-              <Button variant="cta" size="sm" asChild>
-                <Link to="/reservar">Reservar cita</Link>
-              </Button>
-            </div>
-          )}
+          <Button variant="cta" size="sm" asChild>
+            <Link to="/reservar">Reservar cita</Link>
+          </Button>
         </div>
 
         {/* Mobile Menu Button */}
