@@ -101,7 +101,7 @@ serve(async (req) => {
     }
 
     const serviceAccount = parseServiceAccount(serviceAccountJson);
-    const accessToken = await getAccessToken(serviceAccount);
+    const accessToken = await getAccessToken(serviceAccount, calendarId);
 
     const timeMin = `${date}T00:00:00+01:00`;
     const timeMax = `${date}T23:59:59+01:00`;

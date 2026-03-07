@@ -115,7 +115,7 @@ serve(async (req) => {
     }
 
     const serviceAccount = parseServiceAccount(serviceAccountJson);
-    const accessToken = await getAccessToken(serviceAccount);
+    const accessToken = await getAccessToken(serviceAccount, calendarId);
 
     const startHHMM = startTime.substring(0, 5);
     const endHHMM = endTime.substring(0, 5);
