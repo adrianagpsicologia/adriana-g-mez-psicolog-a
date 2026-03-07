@@ -91,7 +91,7 @@ serve(async (req) => {
     }
 
     const serviceAccountJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON");
-    const calendarId = Deno.env.get("GOOGLE_CALENDAR_ID") || "adriana@adrianagomezpsicologia.com";
+    const calendarId = "adriana@adrianagomezpsicologia.com";
 
     if (!serviceAccountJson) {
       return new Response(JSON.stringify({ error: "Google Service Account not configured" }), {
