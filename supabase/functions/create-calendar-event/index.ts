@@ -2,8 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 async function getAccessToken(serviceAccount: any): Promise<string> {
@@ -11,7 +11,7 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
   const header = { alg: "RS256", typ: "JWT" };
   const payload: any = {
     iss: serviceAccount.client_email,
-    sub: "adriana@adrianagomezpsicologia.com",
+    sub: serviceAccount.client_email,
     scope: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events",
     aud: "https://oauth2.googleapis.com/token",
     exp: now + 3600,
@@ -71,7 +71,7 @@ function parseServiceAccount(raw: string): any {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    const cleaned = raw.trim().replace(/^["']|["']$/g, '');
+    const cleaned = raw.trim().replace(/^[\"']|[\"']$/g, '');
     parsed = JSON.parse(cleaned);
   }
   return typeof parsed === 'string' ? JSON.parse(parsed) : parsed;
@@ -91,7 +91,6 @@ serve(async (req) => {
       });
     }
 
-    // Resolve attendee email: use provided email or look up from auth via userId
     let resolvedEmail = attendeeEmail || null;
     if (!resolvedEmail && userId) {
       try {
@@ -100,16 +99,15 @@ serve(async (req) => {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
         const { data: userData } = await supabase.auth.admin.getUserById(userId);
         resolvedEmail = userData?.user?.email || null;
-        console.log("Resolved attendee email:", resolvedEmail);
       } catch (e) {
         console.error("Could not resolve attendee email:", e);
       }
     }
 
     const serviceAccountJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON");
-    const calendarId = Deno.env.get("GOOGLE_CALENDAR_ID");
+    const calendarId = Deno.env.get("GOOGLE_CALENDAR_ID") || "adriana@adrianagpsicologia.com";
 
-    if (!serviceAccountJson || !calendarId) {
+    if (!serviceAccountJson) {
       return new Response(JSON.stringify({ error: "Google Calendar not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -119,27 +117,8 @@ serve(async (req) => {
     const serviceAccount = parseServiceAccount(serviceAccountJson);
     const accessToken = await getAccessToken(serviceAccount);
 
-    // Build event - startTime/endTime come as "HH:MM" or "HH:MM:SS"
     const startHHMM = startTime.substring(0, 5);
     const endHHMM = endTime.substring(0, 5);
-
-    // First, check which conference solutions are available
-    const calInfoUrl = `https://www.googleapis.com/calendar/v3/users/me/calendarList/${encodeURIComponent(calendarId)}`;
-    const calInfoRes = await fetch(calInfoUrl, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    
-    let conferenceType: string | null = null;
-    if (calInfoRes.ok) {
-      const calInfo = await calInfoRes.json();
-      const solutions = calInfo.conferenceProperties?.allowedConferenceSolutionTypes || [];
-      console.log("Available conference types:", solutions);
-      if (solutions.includes("hangoutsMeet")) {
-        conferenceType = "hangoutsMeet";
-      } else if (solutions.includes("eventHangout")) {
-        conferenceType = "eventHangout";
-      }
-    }
 
     const event: any = {
       summary: `${serviceName || "Sesión"} - ${patientName || "Paciente"}`,
@@ -156,24 +135,31 @@ serve(async (req) => {
       guestsCanSeeOtherGuests: false,
     };
 
-    // Add attendee if email available so the event appears in their calendar
     if (resolvedEmail) {
       event.attendees = [{ email: resolvedEmail }];
     }
 
-    // Only add conference data if supported
+    // Check conference support
+    const calInfoUrl = `https://www.googleapis.com/calendar/v3/users/me/calendarList/${encodeURIComponent(calendarId)}`;
+    const calInfoRes = await fetch(calInfoUrl, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    
     let queryParam = "";
-    if (conferenceType) {
-      event.conferenceData = {
-        createRequest: {
-          requestId: `booking-${Date.now()}`,
-          conferenceSolutionKey: { type: conferenceType },
-        },
-      };
-      queryParam = "?conferenceDataVersion=1";
+    if (calInfoRes.ok) {
+      const calInfo = await calInfoRes.json();
+      const solutions = calInfo.conferenceProperties?.allowedConferenceSolutionTypes || [];
+      if (solutions.includes("hangoutsMeet")) {
+        event.conferenceData = {
+          createRequest: {
+            requestId: `booking-${Date.now()}`,
+            conferenceSolutionKey: { type: "hangoutsMeet" },
+          },
+        };
+        queryParam = "?conferenceDataVersion=1";
+      }
     }
 
-    // sendUpdates=all ensures Google sends invitation emails so the event appears in the patient's calendar
     const sendUpdates = "sendUpdates=all";
     const separator = queryParam ? "&" : "?";
     const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events${queryParam}${separator}${sendUpdates}`;
@@ -193,14 +179,9 @@ serve(async (req) => {
     }
 
     const created = await calRes.json();
-    console.log("Event created:", created.id);
-
-    // Extract Google Meet link
     const meetLink = created.conferenceData?.entryPoints?.find(
       (ep: any) => ep.entryPointType === "video"
     )?.uri || null;
-
-    console.log("Meet link:", meetLink);
 
     return new Response(JSON.stringify({ success: true, eventId: created.id, meetLink }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
