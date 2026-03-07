@@ -182,11 +182,6 @@ const Booking = () => {
   };
 
   const handleContinueToDatetime = () => {
-    if (!user) {
-      toast.info("Inicia sesión para reservar tu cita");
-      navigate("/auth?redirect=/reservar");
-      return;
-    }
     setStep("datetime");
   };
 
