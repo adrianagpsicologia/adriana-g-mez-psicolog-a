@@ -187,6 +187,13 @@ const Booking = () => {
 
   const handleCheckout = async () => {
     if (!selected || !selectedDate || !selectedTime) return;
+
+    if (!user) {
+      toast.info("Inicia sesión para completar tu reserva");
+      navigate("/auth?redirect=/reservar");
+      return;
+    }
+
     const service = services.find((s) => s.id === selected);
     if (!service) return;
 
