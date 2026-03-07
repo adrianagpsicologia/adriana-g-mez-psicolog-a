@@ -5,19 +5,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-async function getAccessToken(serviceAccount: any, impersonateEmail?: string): Promise<string> {
+async function getAccessToken(serviceAccount: any): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: "RS256", typ: "JWT" };
-  const payload: any = {
+  const payload = {
     iss: serviceAccount.client_email,
+    sub: serviceAccount.client_email,
     scope: "https://www.googleapis.com/auth/calendar.readonly",
     aud: "https://oauth2.googleapis.com/token",
     exp: now + 3600,
     iat: now,
   };
-  // Use impersonation if provided, otherwise use service account's own email
-  payload.sub = impersonateEmail || serviceAccount.client_email;
-
 
   const encode = (obj: any) => {
     const json = new TextEncoder().encode(JSON.stringify(obj));
@@ -103,24 +101,7 @@ serve(async (req) => {
     }
 
     const serviceAccount = parseServiceAccount(serviceAccountJson);
-
-    // Try with domain-wide delegation first, fallback to direct access
-    let accessToken: string;
-    try {
-      accessToken = await getAccessToken(serviceAccount, calendarId);
-      console.log("Got token via domain-wide delegation (impersonation)");
-    } catch (e: any) {
-      console.log("DWD failed, trying direct service account access:", e.message);
-      accessToken = await getAccessToken(serviceAccount);
-      console.log("Got token via direct service account access");
-    }
-
-    // Diagnostic: list calendars the service account can see
-    const calListRes = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList", {
-      headers: { "Authorization": `Bearer ${accessToken}` },
-    });
-    const calListData = await calListRes.json();
-    console.log("Calendar list:", JSON.stringify(calListData));
+    const accessToken = await getAccessToken(serviceAccount);
 
     const timeMin = `${date}T00:00:00+01:00`;
     const timeMax = `${date}T23:59:59+01:00`;
