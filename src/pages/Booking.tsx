@@ -128,6 +128,11 @@ const Booking = () => {
     fetchBusy();
   }, [selectedDate]);
 
+  const toMinutes = (time: string) => {
+    const [h, m] = time.split(":").map(Number);
+    return h * 60 + m;
+  };
+
   // Generate available time slots for selected date
   const timeSlots = useMemo(() => {
     if (!selectedDate || !selected) return [];
@@ -168,11 +173,6 @@ const Booking = () => {
       });
     });
   }, [selectedDate, selected, availability, busySlots, services]);
-
-  const toMinutes = (time: string) => {
-    const [h, m] = time.split(":").map(Number);
-    return h * 60 + m;
-  };
 
   const handleSelectService = (id: string) => {
     setSelected(id);
