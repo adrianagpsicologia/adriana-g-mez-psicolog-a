@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
 async function getAccessToken(serviceAccount: any): Promise<string> {
@@ -91,7 +91,7 @@ serve(async (req) => {
     }
 
     const serviceAccountJson = Deno.env.get("GOOGLE_SERVICE_ACCOUNT_JSON");
-    const calendarId = "adriana@adrianagpsicologia.com";
+    const calendarId = Deno.env.get("GOOGLE_CALENDAR_ID") || "adriana@adrianagpsicologia.com";
 
     if (!serviceAccountJson) {
       return new Response(JSON.stringify({ error: "Google Service Account not configured" }), {
@@ -106,9 +106,7 @@ serve(async (req) => {
     const timeMin = `${date}T00:00:00+01:00`;
     const timeMax = `${date}T23:59:59+01:00`;
 
-    // Use FreeBusy API with service account token
-    const freeBusyUrl = `https://www.googleapis.com/calendar/v3/freeBusy`;
-    const freeBusyRes = await fetch(freeBusyUrl, {
+    const freeBusyRes = await fetch("https://www.googleapis.com/calendar/v3/freeBusy", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -144,8 +142,6 @@ serve(async (req) => {
     } else if (!freeBusyRes.ok) {
       console.error("FreeBusy API error:", freeBusyRes.status, JSON.stringify(freeBusyData));
     }
-
-    console.log("Busy slots:", JSON.stringify(busySlots));
 
     return new Response(JSON.stringify({ busySlots }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

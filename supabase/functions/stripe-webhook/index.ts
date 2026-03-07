@@ -35,7 +35,7 @@ serve(async (req) => {
       return new Response("Missing metadata", { status: 400 });
     }
 
-    // Get patient name and service name for calendar event
+    // Get patient name and service name
     const { data: profile } = await supabase
       .from("profiles")
       .select("full_name")
@@ -48,6 +48,11 @@ serve(async (req) => {
       .eq("id", serviceId)
       .single();
 
+    const patientName = profile?.full_name || "Paciente";
+    const serviceName = service?.name || "Sesión";
+
+    // Create booking record
+    let bookingId: string | null = null;
     if (bonoId) {
       const { data: bonoData } = await supabase
         .from("bonos")
@@ -66,48 +71,72 @@ serve(async (req) => {
           stripe_session_id: session.id,
         }).select().single();
 
-        await supabase.from("bookings").insert({
+        const { data: booking } = await supabase.from("bookings").insert({
           user_id: userId,
           service_id: serviceId,
           patient_bono_id: patientBono?.id,
           booking_date: bookingDate,
           start_time: startTime,
           end_time: endTime,
-          status: "pending",
+          status: "confirmed",
           payment_method: "stripe",
           payment_status: "paid",
           stripe_session_id: session.id,
-        });
+        }).select("id").single();
+        bookingId = booking?.id || null;
       }
     } else {
-      await supabase.from("bookings").insert({
+      const { data: booking } = await supabase.from("bookings").insert({
         user_id: userId,
         service_id: serviceId,
         booking_date: bookingDate,
         start_time: startTime,
         end_time: endTime,
-        status: "pending",
+        status: "confirmed",
         payment_method: "stripe",
         payment_status: "paid",
         stripe_session_id: session.id,
+      }).select("id").single();
+      bookingId = booking?.id || null;
+    }
+
+    // Create Google Calendar event
+    try {
+      const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY")!;
+
+      const calRes = await fetch(`${SUPABASE_URL}/functions/v1/create-calendar-event`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({
+          date: bookingDate,
+          startTime,
+          endTime,
+          patientName,
+          serviceName,
+          userId,
+        }),
       });
+
+      const calData = await calRes.json();
+      console.log("Calendar event result:", JSON.stringify(calData));
+
+      // Update booking with Google event ID
+      if (calData.eventId && bookingId) {
+        await supabase.from("bookings").update({ google_event_id: calData.eventId }).eq("id", bookingId);
+      }
+    } catch (e) {
+      console.error("Error creating calendar event from webhook:", e);
     }
 
     // Send notification emails
     try {
-      const SUPABASE_URL_ENV = Deno.env.get("SUPABASE_URL")!;
       const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY")!;
 
-      const patientName = profile?.full_name || "Paciente";
-      const serviceName = service?.name || "Sesión";
-
-      // Format date nicely
       const dateObj = new Date(bookingDate + "T12:00:00");
       const dateFormatted = dateObj.toLocaleDateString("es-ES", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
       const timeFormatted = `${startTime.slice(0, 5)} - ${endTime.slice(0, 5)}`;
 
-      // Email to patient
-      await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-booking-email`, {
+      await fetch(`${SUPABASE_URL}/functions/v1/send-booking-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
         body: JSON.stringify({
@@ -120,8 +149,7 @@ serve(async (req) => {
         }),
       });
 
-      // Email to admin
-      await fetch(`${SUPABASE_URL_ENV}/functions/v1/send-booking-email`, {
+      await fetch(`${SUPABASE_URL}/functions/v1/send-booking-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${SUPABASE_ANON_KEY}` },
         body: JSON.stringify({
