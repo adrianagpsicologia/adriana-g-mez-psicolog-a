@@ -137,6 +137,7 @@ const Booking = () => {
                         className="w-full border-0"
                         style={{ height: "680px" }}
                         title={`Agendar ${option.title}`}
+                        sandbox="allow-same-origin allow-scripts allow-forms allow-top-navigation allow-top-navigation-by-user-activation"
                       />
                     </div>
                   )}
