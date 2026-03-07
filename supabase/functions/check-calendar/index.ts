@@ -15,6 +15,9 @@ async function getAccessToken(serviceAccount: any, impersonateEmail?: string): P
     exp: now + 3600,
     iat: now,
   };
+  if (impersonateEmail) {
+    payload.sub = impersonateEmail;
+  }
 
   const encode = (obj: any) => {
     const json = new TextEncoder().encode(JSON.stringify(obj));
@@ -100,7 +103,17 @@ serve(async (req) => {
     }
 
     const serviceAccount = parseServiceAccount(serviceAccountJson);
-    const accessToken = await getAccessToken(serviceAccount, calendarId);
+
+    // Try with domain-wide delegation first, fallback to direct access
+    let accessToken: string;
+    try {
+      accessToken = await getAccessToken(serviceAccount, calendarId);
+      console.log("Got token via domain-wide delegation (impersonation)");
+    } catch (e: any) {
+      console.log("DWD failed, trying direct service account access:", e.message);
+      accessToken = await getAccessToken(serviceAccount);
+      console.log("Got token via direct service account access");
+    }
 
     const timeMin = `${date}T00:00:00+01:00`;
     const timeMax = `${date}T23:59:59+01:00`;
