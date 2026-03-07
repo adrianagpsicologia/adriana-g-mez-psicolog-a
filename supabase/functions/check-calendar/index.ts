@@ -8,9 +8,8 @@ const corsHeaders = {
 async function getAccessToken(serviceAccount: any, impersonateEmail?: string): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: "RS256", typ: "JWT" };
-  const payload = {
+  const payload: any = {
     iss: serviceAccount.client_email,
-    sub: impersonateEmail,
     scope: "https://www.googleapis.com/auth/calendar.readonly",
     aud: "https://oauth2.googleapis.com/token",
     exp: now + 3600,
