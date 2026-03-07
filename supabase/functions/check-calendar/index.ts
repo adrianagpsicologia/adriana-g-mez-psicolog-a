@@ -5,12 +5,12 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-async function getAccessToken(serviceAccount: any): Promise<string> {
+async function getAccessToken(serviceAccount: any, impersonateEmail: string): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const header = { alg: "RS256", typ: "JWT" };
   const payload = {
     iss: serviceAccount.client_email,
-    sub: serviceAccount.client_email,
+    sub: impersonateEmail,
     scope: "https://www.googleapis.com/auth/calendar.readonly",
     aud: "https://oauth2.googleapis.com/token",
     exp: now + 3600,
@@ -101,7 +101,7 @@ serve(async (req) => {
     }
 
     const serviceAccount = parseServiceAccount(serviceAccountJson);
-    const accessToken = await getAccessToken(serviceAccount);
+    const accessToken = await getAccessToken(serviceAccount, calendarId);
 
     const timeMin = `${date}T00:00:00+01:00`;
     const timeMax = `${date}T23:59:59+01:00`;
