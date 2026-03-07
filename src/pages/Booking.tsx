@@ -331,7 +331,7 @@ const Booking = () => {
               {selectedDate && (
                 <div className="animate-fade-in">
                   <h3 className="font-heading font-medium text-center mb-4">
-                    Horarios disponibles — {format(selectedDate, "d 'de' MMMM", { locale: undefined })}
+                    Horarios disponibles — {format(selectedDate, "d 'de' MMMM", { locale: es })}
                   </h3>
                   {loadingSlots ? (
                     <div className="text-center py-8 text-muted-foreground">
