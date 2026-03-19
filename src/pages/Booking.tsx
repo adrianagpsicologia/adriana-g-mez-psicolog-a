@@ -104,7 +104,13 @@ const Booking = () => {
               services.map((option) => (
                 <div key={option.id}>
                   <button
-                    onClick={() => setSelected(selected === option.id ? null : option.id)}
+                    onClick={() => {
+                      const newSelected = selected === option.id ? null : option.id;
+                      setSelected(newSelected);
+                      if (newSelected && typeof window.gtag === 'function') {
+                        window.gtag('event', 'ads_conversion_Reserva_de_cita_1', {});
+                      }
+                    }}
                     className={`relative w-full text-left p-5 rounded-xl border-2 transition-all duration-200 ${
                       selected === option.id
                         ? "border-foreground bg-accent/50 shadow-md"
