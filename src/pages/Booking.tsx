@@ -107,8 +107,8 @@ const Booking = () => {
                     onClick={() => {
                       const newSelected = selected === option.id ? null : option.id;
                       setSelected(newSelected);
-                      if (newSelected && typeof window.gtag === 'function') {
-                        window.gtag('event', 'ads_conversion_Reserva_de_cita_1', {});
+                      if (newSelected && typeof (window as any).gtag === 'function') {
+                        (window as any).gtag('event', 'ads_conversion_Reserva_de_cita_1', {});
                       }
                     }}
                     className={`relative w-full text-left p-5 rounded-xl border-2 transition-all duration-200 ${
