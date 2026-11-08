@@ -8,6 +8,7 @@ import FAQSection from "@/components/FAQSection";
 import BlogSection from "@/components/BlogSection";
 import Footer from "@/components/Footer";
 import WhatsAppButton from "@/components/WhatsAppButton";
+import PodcastSection from "@/components/PodcastSection";
 
 const Index = () => {
   return (
@@ -19,6 +20,7 @@ const Index = () => {
       <ProcessSection />
       <PricingSection />
       <FAQSection />
+      <PodcastSection />
       <BlogSection />
       <Footer />
       <WhatsAppButton />

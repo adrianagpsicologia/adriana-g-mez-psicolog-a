@@ -56,6 +56,13 @@ export default {
           DEFAULT: "hsl(var(--charcoal))",
           soft: "hsl(var(--charcoal-soft))",
         },
+        podcast: {
+          background: "hsl(var(--podcast-background))",
+          foreground: "hsl(var(--podcast-foreground))",
+          accent: "hsl(var(--podcast-accent))",
+          muted: "hsl(var(--podcast-muted))",
+          border: "hsl(var(--podcast-border))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
