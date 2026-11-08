@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-knots.jpg";
+import { Headphones } from "lucide-react";
 
 const HeroSection = () => {
   return (
@@ -39,6 +40,9 @@ const HeroSection = () => {
             </Button>
             <Button variant="ctaOutline" size="xl" asChild>
               <a href="#servicios">Conocer más</a>
+            </Button>
+            <Button variant="ctaOutline" size="xl" asChild>
+              <a href="#podcast"><Headphones aria-hidden="true" /> Podcast</a>
             </Button>
           </div>
         </div>

@@ -17,6 +17,8 @@ const buttonVariants = cva(
         link: "text-foreground underline-offset-4 hover:underline",
         cta: "bg-foreground text-background hover:bg-foreground/90 rounded-full shadow-soft hover:shadow-card hover:-translate-y-0.5",
         ctaOutline: "border-2 border-foreground bg-transparent text-foreground hover:bg-foreground hover:text-background rounded-full",
+        podcast: "bg-podcast-accent text-podcast-background hover:bg-podcast-accent/90 rounded-full focus-visible:ring-podcast-accent",
+        podcastOutline: "border border-podcast-border bg-podcast-background text-podcast-foreground hover:bg-podcast-accent/10 rounded-full focus-visible:ring-podcast-accent",
       },
       size: {
         default: "h-10 px-6 py-2",
