@@ -9,6 +9,10 @@ const PodcastSection = () => (
       <div className="podcast-logo-frame mx-auto mb-10 md:mb-12">
         <img
           src={podcastLogo.url}
+          onError={(event) => {
+            const image = event.currentTarget;
+            if (image.getAttribute("src") !== "/favicon.svg") image.src = "/favicon.svg";
+          }}
           alt="¿Qué hago en esta vida? Podcast"
           className="h-full w-full rounded-full object-contain"
           loading="lazy"
