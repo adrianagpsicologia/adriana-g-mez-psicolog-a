@@ -1,6 +1,6 @@
 import { Headphones, Instagram, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import podcastLogo from "@/assets/podcast-logo.svg";
+import podcastLogo from "@/assets/podcast-logo.svg.asset.json";
 
 const PodcastSection = () => (
   <section id="podcast" className="podcast-section relative overflow-hidden scroll-mt-20">
@@ -8,7 +8,7 @@ const PodcastSection = () => (
     <div className="container-wide relative py-16 md:py-20">
       <div className="podcast-logo-frame mx-auto mb-10 md:mb-12">
         <img
-          src={podcastLogo}
+          src={podcastLogo.url}
           alt="¿Qué hago en esta vida? Podcast"
           className="h-full w-full rounded-full object-contain"
           loading="lazy"
