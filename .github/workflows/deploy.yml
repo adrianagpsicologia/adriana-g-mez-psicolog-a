@@ -17,6 +17,12 @@ jobs:
           node-version: 20
       - run: npm install
       - run: npm run build
+      - name: Prepare GitHub Pages routing
+        run: |
+          mkdir -p dist/reservar
+          cp dist/index.html dist/reservar/index.html
+          cp dist/index.html dist/404.html
+          cp CNAME dist/CNAME
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
