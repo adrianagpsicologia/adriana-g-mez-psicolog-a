@@ -21,6 +21,7 @@ const Navigation = () => {
     { href: "#proceso", label: "Proceso" },
     { href: "#tarifas", label: "Tarifas" },
     { href: "#faq", label: "FAQ" },
+    { href: "#podcast", label: "Podcast" },
     { href: "#blog", label: "Blog" },
   ];
 
