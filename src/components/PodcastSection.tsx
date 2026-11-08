@@ -27,20 +27,26 @@ const PodcastSection = () => (
         <h2 className="text-4xl md:text-5xl lg:text-6xl leading-tight mb-5">
           Qué hago en <span className="text-podcast-accent">esta vida</span>
         </h2>
-        <p className="text-lg md:text-xl leading-relaxed text-podcast-muted max-w-4xl">
-          Un podcast para conversar sobre las preguntas y dilemas que nos atraviesan.
-          Reflexiones cercanas para entendernos un poco mejor y recordar que no hace falta
-          tener todas las respuestas.
-        </p>
+        <div className="space-y-5 text-lg md:text-xl leading-relaxed text-podcast-muted max-w-4xl">
+          <p>
+            Qué hago en esta vida es un podcast conversacional sobre la vida, la mente y lo que sentimos.
+            Adriana Gómez, psicóloga clínica y sanitaria, y su hermana, la comunicóloga Marta Gómez,
+            charlan de forma cercana -y sin filtro- sobre emociones, dilemas y esas preguntas que todos nos hacemos.
+          </p>
+          <p>
+            Con un enfoque psicológico, pero en tono cercano y sin tecnicismos, Qué hago en esta vida
+            es un espacio que invita a pensar, reír y sentirse acompañado.
+          </p>
+        </div>
         <div className="flex flex-col sm:flex-row sm:flex-wrap gap-3 mt-8">
           <Button variant="podcast" size="lg" asChild>
-            <a href="https://www.youtube.com/@Quehagoenestavida" target="_blank" rel="noopener noreferrer">
-              <Play aria-hidden="true" /> Ver episodios
+            <a href="https://open.spotify.com/show/7cjUgsH6tSzskS061w7rKh?si=5c76757dfae44d7b" target="_blank" rel="noopener noreferrer">
+              <Headphones aria-hidden="true" /> Escuchar en Spotify
             </a>
           </Button>
           <Button variant="podcastOutline" size="lg" asChild>
-            <a href="https://open.spotify.com/show/7cjUgsH6tSzskS061w7rKh?si=5c76757dfae44d7b" target="_blank" rel="noopener noreferrer">
-              <Headphones aria-hidden="true" /> Escuchar en Spotify
+            <a href="https://www.youtube.com/@Quehagoenestavida" target="_blank" rel="noopener noreferrer">
+              <Play aria-hidden="true" /> Escuchar en YouTube
             </a>
           </Button>
           <Button variant="podcastOutline" size="lg" asChild>
