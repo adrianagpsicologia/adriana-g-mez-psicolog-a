@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { ArrowUpRight, Headphones, Instagram, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import podcastLogo from "@/assets/podcast-logo.svg.asset.json";
+
+// Real file in public/ so it also works on the GitHub Pages deployment,
+// which cannot serve Lovable CDN asset URLs.
+const PODCAST_LOGO_URL = "/podcast-logo.svg";
 
 interface Episode {
   id: string;
