@@ -1,10 +1,15 @@
 import { useEffect } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
+import { reportBookingConversion } from "@/lib/google-ads";
 
 const BookingSuccess = () => {
-  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    // No-op until the Google Ads conversion label is configured; never
+    // includes patient data, only the anonymous conversion signal.
+    void reportBookingConversion();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4">

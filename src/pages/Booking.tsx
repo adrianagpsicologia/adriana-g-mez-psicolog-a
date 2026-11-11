@@ -105,11 +105,7 @@ const Booking = () => {
                 <div key={option.id}>
                   <button
                     onClick={() => {
-                      const newSelected = selected === option.id ? null : option.id;
-                      setSelected(newSelected);
-                      if (newSelected && typeof (window as any).gtag === 'function') {
-                        (window as any).gtag('event', 'ads_conversion_Reserva_de_cita_1', {});
-                      }
+                      setSelected(selected === option.id ? null : option.id);
                     }}
                     className={`relative w-full text-left p-5 rounded-xl border-2 transition-all duration-200 ${
                       selected === option.id

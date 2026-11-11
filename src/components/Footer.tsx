@@ -1,4 +1,6 @@
 import { Mail, Phone, MapPin, Instagram } from "lucide-react";
+import { Link } from "react-router-dom";
+import { COOKIE_SETTINGS_EVENT } from "@/components/ConsentBanner";
 import knotIcon from "@/assets/knot-icon.png";
 
 const Footer = () => {
@@ -89,9 +91,16 @@ const Footer = () => {
             © {new Date().getFullYear()} Adriana Gómez Psicología. Todos los derechos reservados.
           </p>
           <div className="flex gap-6 text-xs text-background/50">
-            <a href="#" className="hover:text-background transition-colors">
+            <Link to="/privacidad" className="hover:text-background transition-colors">
               Política de privacidad
-            </a>
+            </Link>
+            <button
+              type="button"
+              onClick={() => window.dispatchEvent(new Event(COOKIE_SETTINGS_EVENT))}
+              className="hover:text-background transition-colors"
+            >
+              Configurar cookies
+            </button>
             <a href="#" className="hover:text-background transition-colors">
               Aviso legal
             </a>
