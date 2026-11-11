@@ -147,9 +147,6 @@ const PodcastSection = () => {
                         : "border-podcast-border/60 hover:border-podcast-accent/60 hover:bg-podcast-accent/5"
                     }`}
                   >
-                    <span className="font-heading text-lg text-podcast-accent flex-shrink-0">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
                     <span className="flex-grow min-w-0">
                       <span className="block font-medium truncate">
                         {episode.title}
