@@ -58,7 +58,6 @@ const PodcastSection = () => {
                 src={podcastLogo.url}
                 alt="¿Qué hago en esta vida? Podcast"
                 className="h-full w-full rounded-full object-contain"
-                loading="lazy"
                 width={1254}
                 height={1254}
               />
@@ -124,7 +123,6 @@ const PodcastSection = () => {
                 className="w-full h-full border-0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
-                loading="lazy"
               />
             </div>
             <div className="p-6 md:p-8">
