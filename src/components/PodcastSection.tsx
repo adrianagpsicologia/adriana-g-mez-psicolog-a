@@ -58,7 +58,7 @@ const PodcastSection = () => {
           <div>
             <div className="podcast-logo-frame podcast-logo-frame--small mb-8">
               <img
-                src={podcastLogo.url}
+                src={PODCAST_LOGO_URL}
                 alt="¿Qué hago en esta vida? Podcast"
                 className="h-full w-full rounded-full object-contain"
                 width={1254}
