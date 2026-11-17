@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Anyone can view blocked dates" ON public.blocked_dates;
